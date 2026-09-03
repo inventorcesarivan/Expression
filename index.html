@@ -1,0 +1,1624 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BodyBeat v26 — Grilla, cámara y controles de volumen ajustados</title>
+
+<style>
+body{margin:0;overflow:hidden;background:#050b18;font-family:Arial;}
+video{display:none;}
+canvas{position:absolute;left:0;top:0;width:100vw;height:100vh;z-index:1;}
+
+#overlay{
+position:absolute;top:0;left:0;width:100%;height:100%;
+background:rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;
+color:white;font-size:22px;z-index:50;cursor:pointer;
+}
+
+#bottomBar{
+position:fixed;left:50%;bottom:12px;transform:translateX(-50%);
+z-index:180;display:flex;align-items:center;gap:7px;
+}
+#menuBtn{
+position:static;transform:none;
+height:36px;min-width:74px;padding:6px 14px;box-sizing:border-box;
+border-radius:12px;border:1px solid #00e5ff;background:#102a55;color:white;
+cursor:pointer;font-size:13px;box-shadow:0 0 12px rgba(0,229,255,.25);
+}
+#menuBtn:hover{filter:brightness(1.18);}
+
+
+#mainMenu{
+position:fixed;top:50%;left:50%;
+transform:translate(-50%,-50%);
+background:#0b1f3f;border:3px solid #00e5ff;
+border-radius:25px;padding:30px;display:none;
+z-index:300;min-width:460px;color:white;
+box-shadow:0 0 30px #00e5ff;
+}
+
+.menuButton{
+width:100%;padding:12px;margin-top:10px;
+border-radius:18px;border:2px solid #ff00ff;
+background:#102a55;color:white;cursor:pointer;
+box-shadow:0 0 12px #ff00ff;
+}
+
+
+.categoryButton{
+width:100%;padding:12px;margin-top:9px;border-radius:16px;border:1px solid #00e5ff;
+background:#102a55;color:white;cursor:pointer;text-align:left;font-size:14px;
+}
+.categoryButton:hover,.menuButton:hover{filter:brightness(1.18);}
+.panelTitle{text-align:center;color:#e0c3ff;margin:0 0 8px;}
+.panelHint{font-size:12px;color:#bfefff;text-align:center;margin:0 0 12px;}
+.sectionLabel{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#8feeff;margin:14px 0 5px;}
+.navRow{display:flex;gap:8px;margin-top:12px;}
+.navRow button{flex:1;padding:8px;border-radius:12px;border:1px solid #00e5ff;background:#102a55;color:white;cursor:pointer;}
+
+.subPanel{max-height:85vh;overflow-y:auto;box-sizing:border-box;
+position:fixed;top:50%;left:50%;
+transform:translate(-50%,-50%);
+background:#0a1833;border:3px solid #ff00ff;
+border-radius:20px;padding:20px;
+display:none;z-index:400;color:white;
+min-width:360px;box-shadow:0 0 25px #ff00ff;
+}
+
+.closeBtn{position:absolute;top:10px;right:15px;cursor:pointer;font-size:20px;}
+input[type=range]{width:100%;}
+
+.assignGrid{
+display:grid;
+grid-template-columns:repeat(10,1fr);
+gap:3px;margin-top:10px;
+}
+
+.assignCell{
+height:26px;border:1px solid #00e5ff;
+font-size:10px;display:flex;
+align-items:center;justify-content:center;
+cursor:pointer;
+}
+
+.sideCell{background:#003d2f;}
+.centerCell{background:#111;}
+.loaded{background:#6a00ff;}
+
+#evaluationBox{margin-top:12px;padding:12px;border:1px solid #00e5ff;border-radius:14px;background:rgba(0,0,0,.22);}
+#evaluationScore{font-size:42px;font-weight:bold;text-align:center;color:#e0c3ff;margin:8px 0;}
+.evalRow{display:flex;justify-content:space-between;font-size:13px;margin:5px 0;}
+.evalBar{height:7px;background:#182746;border-radius:8px;overflow:hidden;margin-bottom:7px;}
+.evalFill{height:100%;width:0%;background:#00e5ff;transition:width .25s;}
+#evaluationStatus{font-size:12px;text-align:center;color:#bfefff;margin:7px 0;}
+
+/* EVALUACIÓN POR CATEGORÍAS — v21 */
+#categorySelector{width:100%;padding:8px;border-radius:8px;background:#102a55;color:white;border:1px solid #00e5ff;margin:6px 0 4px;}
+#categoryDescription{font-size:11px;line-height:1.35;color:#bfefff;margin:4px 0 9px;text-align:center;}
+#aiStatus{font-size:11px;color:#9ff;text-align:center;margin:6px 0;}
+#datasetActions{display:flex;gap:6px;margin-top:8px;}
+#datasetActions button{flex:1;padding:7px;border-radius:10px;border:1px solid #00e5ff;background:#102a55;color:white;cursor:pointer;font-size:11px;}
+.aiBadge{display:inline-block;font-size:10px;padding:3px 7px;border:1px solid #ff00ff;border-radius:9px;color:#ffd6ff;margin-left:5px;}
+#categoryBreakdown{margin-top:9px;border-top:1px solid rgba(0,229,255,.25);padding-top:7px;}
+.evalMini{display:flex;justify-content:space-between;font-size:11px;margin:3px 0;}
+/* CAPA DE INFORMACIÓN Y CONTROLES RÁPIDOS */
+#topIndicator{
+position:fixed;left:50%;top:7px;transform:translateX(-50%);
+width:min(760px,calc(100vw - 150px));height:46px;min-height:46px;box-sizing:border-box;
+z-index:150;display:flex;align-items:center;justify-content:center;gap:18px;
+padding:8px 18px;border:1px solid rgba(0,229,255,.75);border-radius:18px;
+background:rgba(5,11,24,.72);backdrop-filter:blur(8px);color:white;
+box-shadow:0 0 14px rgba(0,229,255,.25);font-size:13px;text-align:center;
+pointer-events:none;opacity:.92;
+}
+#topMessage{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#topEvalScore{font-weight:bold;color:#e0c3ff;display:none;white-space:nowrap;}
+#topEvalTimer{font-weight:bold;color:#00e5ff;display:none;white-space:nowrap;}
+#quickBar{
+position:static;transform:none;
+z-index:180;display:flex;align-items:center;gap:7px;padding:0;
+background:rgba(5,11,24,.78);border:1px solid rgba(0,229,255,.65);
+border-radius:18px;backdrop-filter:blur(8px);box-shadow:0 0 15px rgba(0,229,255,.2);
+}
+.quickBtn{height:36px;min-width:42px;padding:6px 11px;border-radius:12px;border:1px solid #00e5ff;background:#102a55;color:white;cursor:pointer;font-size:13px;}
+.quickBtn:hover{filter:brightness(1.18);}
+#quickVolumeWrap{display:none;align-items:center;gap:7px;padding:0 5px;}
+#quickVolume{width:100px;}
+#quickPause.paused{border-color:#ff00ff;box-shadow:0 0 10px rgba(255,0,255,.35);}
+#countdownOverlay{
+position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;
+background:rgba(0,0,0,.28);pointer-events:none;
+}
+#countdownText{font-size:clamp(52px,10vw,120px);font-weight:bold;color:#fff;text-shadow:0 0 28px #00e5ff,0 0 55px #ff00ff;}
+#countdownTitle{font-size:clamp(18px,3vw,32px);font-weight:700;color:#fff;text-align:center;text-shadow:0 0 14px #00e5ff;margin-bottom:18px;max-width:90vw;}
+.countdownContent{display:flex;flex-direction:column;align-items:center;justify-content:center;}
+#finalResultOverlay{position:fixed;inset:0;z-index:650;display:none;align-items:center;justify-content:center;background:radial-gradient(circle at center,rgba(10,25,55,.72),rgba(0,0,0,.82));pointer-events:none;overflow:hidden;}
+#finalResultCard{position:relative;text-align:center;padding:28px 42px;border:2px solid rgba(0,229,255,.75);border-radius:28px;background:rgba(5,11,24,.84);box-shadow:0 0 30px rgba(0,229,255,.35),0 0 70px rgba(255,0,255,.22);animation:finalPop .8s cubic-bezier(.2,1.5,.4,1) both,finalGlow 1.7s ease-in-out infinite alternate;max-width:90vw;}
+#finalScoreNumber{font-size:clamp(76px,16vw,180px);line-height:.9;font-weight:900;color:#fff;text-shadow:0 0 18px #00e5ff,0 0 42px #ff00ff;margin:4px 0 14px;}
+#finalScoreLabel{font-size:clamp(20px,4vw,42px);font-weight:800;color:#fff;}
+#finalScoreMessage{font-size:clamp(17px,3vw,28px);font-weight:600;color:#dffcff;margin-top:10px;}
+.celebrateParticle{position:absolute;left:50%;top:50%;width:8px;height:18px;border-radius:3px;opacity:0;animation:confettiFly 1.9s ease-out forwards;}
+@keyframes finalPop{0%{transform:scale(.35) rotate(-4deg);opacity:0}65%{transform:scale(1.08) rotate(1deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+@keyframes finalGlow{from{box-shadow:0 0 24px rgba(0,229,255,.32),0 0 55px rgba(255,0,255,.18)}to{box-shadow:0 0 42px rgba(0,229,255,.62),0 0 90px rgba(255,0,255,.35)}}
+@keyframes confettiFly{0%{transform:translate(-50%,-50%) rotate(0) scale(.6);opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--rot));opacity:0}}
+@media(max-width:700px){#finalResultCard{padding:22px 24px;border-radius:22px;}}
+#sectorVolumeBar{position:fixed;z-index:190;display:flex;align-items:center;justify-content:center;gap:8px;pointer-events:auto;padding:2px 8px;border:1px solid rgba(0,229,255,.6);border-radius:14px;background:rgba(5,11,24,.78);backdrop-filter:blur(8px);box-shadow:0 0 14px rgba(0,229,255,.18);box-sizing:border-box;}
+.sectorVol{display:flex;align-items:center;gap:5px;color:#fff;font-size:11px;white-space:nowrap;}
+.sectorVol span{opacity:.95;}
+.sectorVol input{width:86px;accent-color:#00e5ff;}
+.sectorVol b{min-width:30px;text-align:right;font-size:10px;color:#bfefff;}
+@media(max-width:700px){#sectorVolumeBar{gap:4px;padding:2px 5px;border-radius:12px;} .sectorVol{gap:3px;font-size:9px;} .sectorVol input{width:58px;} .sectorVol b{min-width:25px;font-size:9px;}}
+#gridTopZone,#gridBottomZone{position:fixed;left:0;width:100%;pointer-events:none;z-index:2;}
+#gridTopZone{top:0;height:72px;}
+#gridBottomZone{bottom:0;height:66px;}
+@media(max-width:700px){
+ #topIndicator{top:5px;width:calc(100vw - 20px);height:40px;min-height:40px;padding:6px 10px;font-size:11px;gap:9px;}
+ #gridTopZone{height:62px;} #gridBottomZone{height:60px;}
+ #bottomBar{bottom:7px;gap:4px;}
+ #quickBar{gap:4px;padding:0;}
+ #menuBtn{height:34px;min-width:58px;padding:5px 9px;font-size:12px;}
+ .quickBtn{height:34px;min-width:38px;padding:5px 8px;font-size:12px;}
+ #quickVolume{width:78px;}
+}
+
+/* ORIENTACIÓN MÓVIL — BodyBeat requiere pantalla horizontal */
+#orientationOverlay{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;background:#050b18;color:white;text-align:center;padding:24px;box-sizing:border-box;}
+#orientationOverlay .orientationCard{max-width:520px;padding:28px 24px;border:2px solid #00e5ff;border-radius:24px;background:rgba(10,24,51,.94);box-shadow:0 0 30px rgba(0,229,255,.35);}
+#orientationOverlay .orientationIcon{font-size:64px;line-height:1;margin-bottom:16px;}
+#orientationOverlay h2{margin:0 0 10px;color:#e0c3ff;font-size:24px;}
+#orientationOverlay p{margin:0;color:#bfefff;font-size:14px;line-height:1.5;}
+@media (orientation:portrait) and (max-width:900px){#orientationOverlay{display:flex;}}
+
+</style>
+</head>
+<body>
+
+<div id="orientationOverlay"><div class="orientationCard"><div class="orientationIcon">📱↔️</div><h2>Gira tu dispositivo</h2><p>BodyBeat está diseñado para funcionar en pantalla horizontal.<br>Gira el teléfono para continuar.</p></div></div>
+<div id="overlay">Toca para activar cámara y sonido</div>
+<div id="finalResultOverlay"><div id="finalResultCard"><div id="finalScoreLabel">Obtuviste</div><div id="finalScoreNumber">0</div><div id="finalScoreMessage">Cada movimiento cuenta. ¡Sigue adelante!</div></div></div>
+<div id="topIndicator"><span id="topMessage">Listo para comenzar</span><span id="topEvalTimer"></span><span id="topEvalScore"></span></div>
+<div id="sectorVolumeBar">
+  <label class="sectorVol"><span>◀ Bases</span><input id="leftSectorVolume" type="range" min="0" max="1" step="0.01" value="0.9"><b id="leftSectorValue">90%</b></label>
+  <label class="sectorVol"><span>◆ Melodías</span><input id="centerSectorVolume" type="range" min="0" max="1" step="0.01" value="0.9"><b id="centerSectorValue">90%</b></label>
+  <label class="sectorVol"><span>Bases ▶</span><input id="rightSectorVolume" type="range" min="0" max="1" step="0.01" value="0.9"><b id="rightSectorValue">90%</b></label>
+</div>
+<div id="bottomBar">
+  <button id="menuBtn">MENU</button>
+  <div id="quickBar">
+    <button class="quickBtn" id="quickVolumeBtn" title="Volumen">🔊</button>
+    <div id="quickVolumeWrap"><input id="quickVolume" type="range" min="0" max="1" step="0.01" value="0.9" title="Volumen general"></div>
+    <button class="quickBtn" id="quickPause" title="Pausar interacción">⏸</button>
+    <button class="quickBtn" id="quickStop" title="Detener sonidos">⏹</button>
+    <button class="quickBtn" id="quickMenu" title="Próximamente">☰</button>
+    <button class="quickBtn" id="quickGridToggle" title="Activar/desactivar grilla">Act/des Grilla</button>
+  </div>
+</div>
+<div id="countdownOverlay"><div class="countdownContent"><div id="countdownTitle">Ahora vamos a evaluar tus habilidades<br><span>en 3, 2, 1...</span></div><div id="countdownText">3</div></div></div>
+
+<div id="mainMenu">
+<h2 style="text-align:center;color:#e0c3ff;margin-top:0;">BodyBeat</h2>
+<p class="panelHint">Centro de control</p>
+<button class="menuButton" onclick="openPanel('modulesPanel')">🎛️ Módulos</button>
+<button class="menuButton" onclick="openPanel('settingsPanel')">⚙ Configuración general</button>
+<button class="menuButton" onclick="openPanel('aboutPanel')">ℹ Acerca del proyecto</button>
+<button class="menuButton" onclick="openPanel('contactPanel')">✉ Contacto</button>
+<button class="menuButton" onclick="openPanel('collabPanel')">🤝 Colaboración</button>
+<button class="menuButton" onclick="openPanel('helpPanel')">❔ Ayuda / Guía</button>
+<button class="menuButton" onclick="toggleMirror()">↔ Invertir cámara</button>
+<button class="menuButton" onclick="closeMain()">Cerrar</button>
+</div>
+
+<!-- MENÚ DE MÓDULOS -->
+<div id="modulesPanel" class="subPanel">
+<div class="closeBtn" onclick="closePanel('modulesPanel')">✕</div>
+<h3 class="panelTitle">Módulos</h3>
+<p class="panelHint">Experiencias y herramientas principales de BodyBeat.</p>
+<button class="categoryButton" onclick="openPanel('assignPanel')">🎛️ Grid / Pads — Asignación individual</button>
+<button class="categoryButton" onclick="openPanel('loadPanel')">📦 Grid / Pads — Carga masiva</button>
+<button class="categoryButton" onclick="openPanel('lightsPanel')">💡 Luces / LEDs</button>
+<button class="categoryButton" onclick="openPanel('bodyPanel')">🕺 Cuerpo / Movimiento</button>
+<button class="categoryButton" onclick="openPanel('audioPanel')">🎵 Audio / Música</button>
+<div class="navRow"><button onclick="showMainMenu()">← Menú principal</button></div>
+</div>
+
+<!-- CONFIGURACIÓN GENERAL -->
+<div id="settingsPanel" class="subPanel">
+<div class="closeBtn" onclick="closePanel('settingsPanel')">✕</div>
+<h3 class="panelTitle">Configuración general</h3>
+<p class="panelHint">Todas las preferencias de BodyBeat estarán organizadas aquí.</p>
+<button class="categoryButton" onclick="openPanel('appearancePanel')">🎨 Apariencia</button>
+<button class="categoryButton" onclick="openPanel('audioPanel')">🎵 Audio</button>
+<button class="categoryButton" onclick="openPanel('cameraPanel')">📷 Cámara</button>
+<button class="categoryButton" onclick="openPanel('lightsPanel')">💡 Luces / LEDs</button>
+<button class="categoryButton" onclick="openPanel('bodyPanel')">🕺 Cuerpo / Movimiento</button>
+<button class="categoryButton" onclick="openPanel('interfacePanel')">🎛️ Interfaz</button>
+<button class="categoryButton" onclick="openPanel('dataPanel')">💾 Datos y partidas</button>
+<button class="categoryButton" onclick="openPanel('advancedPanel')">🔧 Avanzado</button>
+<div class="navRow"><button onclick="showMainMenu()">← Menú principal</button></div>
+</div>
+
+<!-- APARIENCIA -->
+<div id="appearancePanel" class="subPanel">
+<div class="closeBtn" onclick="closePanel('appearancePanel')">✕</div>
+<h3 class="panelTitle">Apariencia</h3>
+<p class="panelHint">Espacio preparado para las opciones visuales.</p>
+<div class="sectionLabel">Próximamente</div>
+<p style="font-size:13px;line-height:1.5;">Aquí podremos centralizar estilos visuales, fondos, brillo, opacidad, animaciones y otros elementos de presentación.</p>
+<div class="navRow"><button onclick="openPanel('settingsPanel')">← Configuración general</button></div>
+</div>
+
+<!-- AUDIO -->
+<div id="audioPanel" class="subPanel">
+<div class="closeBtn" onclick="closePanel('audioPanel')">✕</div>
+<h3 class="panelTitle">Audio</h3>
+<label>Volumen general</label>
+<input type="range" id="volSlider" min="0" max="1" step="0.01" value="0.9"><br><br>
+<label>Duración de sonidos centrales: <span id="centerDurationValue">3 s</span></label>
+<input type="range" id="centerDurationSlider" min="1" max="10" step="0.5" value="3"><br><br>
+<button onclick="resetLoops()" style="width:100%;padding:9px;border-radius:12px;">Reset Loops</button>
+<div class="navRow"><button onclick="openPanel('settingsPanel')">← Configuración general</button><button onclick="openPanel('modulesPanel')">Módulos</button></div>
+</div>
+
+<!-- CÁMARA -->
+<div id="cameraPanel" class="subPanel">
+<div class="closeBtn" onclick="closePanel('cameraPanel')">✕</div>
+<h3 class="panelTitle">Cámara</h3>
+<p class="panelHint">Controles de cámara. Se irán ampliando a medida que agreguemos funciones.</p>
+<button class="categoryButton" onclick="toggleMirror()">↔ Invertir cámara</button>
+<div class="sectionLabel">Próximamente</div>
+<p style="font-size:13px;line-height:1.5;">Selección de cámara, resolución, orientación y parámetros de captura.</p>
+<div class="navRow"><button onclick="openPanel('settingsPanel')">← Configuración general</button></div>
+</div>
+
+<!-- LUCES / LED -->
+<div id="lightsPanel" class="subPanel">
+<div class="closeBtn" onclick="closePanel('lightsPanel')">✕</div>
+<h3 class="panelTitle">Luces / LEDs</h3>
+<label>Sensibilidad LED</label>
+<input type="range" id="sensSlider" min="20" max="200" value="80"><br><br>
+<label>Modo de detección LED</label>
+<select id="ledMode" style="width:100%;padding:8px;border-radius:8px;background:#102a55;color:white;border:1px solid #00e5ff;">
+<option value="brightness">Brillo</option><option value="color" selected>Color</option><option value="both">Color + brillo</option>
+</select><br><br>
+<label>Color LED</label>
+<select id="ledColor" style="width:100%;padding:8px;border-radius:8px;background:#102a55;color:white;border:1px solid #00e5ff;">
+<option value="any">Cualquier color</option><option value="red">Rojo</option><option value="green">Verde</option><option value="blue">Azul</option><option value="yellow">Amarillo</option><option value="magenta">Magenta</option><option value="cyan">Cian</option><option value="custom">Personalizado</option>
+</select><br><br>
+<label>Tolerancia de color: <span id="colorToleranceValue">35°</span></label>
+<input type="range" id="colorToleranceSlider" min="5" max="90" value="35"><br><br>
+<button onclick="calibrateLED()" style="width:100%;padding:9px;border-radius:12px;">Calibrar color del LED</button>
+<div id="calibrationStatus" style="font-size:12px;text-align:center;margin-top:7px;color:#bfefff;">Sin calibrar</div>
+<div class="navRow"><button onclick="openPanel('settingsPanel')">← Configuración general</button><button onclick="openPanel('modulesPanel')">Módulos</button></div>
+</div>
+
+<!-- CUERPO / MOVIMIENTO -->
+<div id="bodyPanel" class="subPanel">
+<div class="closeBtn" onclick="closePanel('bodyPanel')">✕</div>
+<h3 class="panelTitle">Cuerpo / Movimiento</h3>
+<label>Modo de interacción</label>
+<select id="interactionMode" style="width:100%;padding:8px;border-radius:8px;background:#102a55;color:white;border:1px solid #00e5ff;">
+<option value="light" selected>Luz / LED</option><option value="body">Cuerpo humano</option>
+</select><br><br>
+<div id="bodySettings" style="display:none;">
+<label>Sensibilidad corporal</label>
+<input type="range" id="bodySensitivitySlider" min="0.2" max="2" step="0.1" value="0.8"><br><br>
+<label>Respuesta corporal</label>
+<select id="bodyResponse" style="width:100%;padding:8px;border-radius:8px;background:#102a55;color:white;border:1px solid #00e5ff;">
+<option value="movement" selected>Movimiento</option><option value="position">Posición</option><option value="both">Movimiento + posición</option>
+</select><br><br>
+<div id="bodyStatus" style="font-size:12px;text-align:center;color:#9ff;margin-bottom:8px;">Detector corporal: en espera</div>
+<div id="evaluationBox">
+<strong>Evaluación corporal <span class="aiBadge">IA preparada</span></strong>
+<div id="evaluationStatus">Preparado para evaluar</div>
+<label style="display:block;margin:8px 0 5px;">Categoría de evaluación</label>
+<select id="categorySelector">
+<option value="dance" selected>💃 Baile</option>
+<option value="aura">✨ Farmear Aura</option>
+<option value="theater">🎭 Teatro</option>
+<option value="music">🎵 Música / Ritmo</option>
+<option value="general">🧠 Movimiento general</option>
+</select>
+<div id="categoryDescription">Evalúa coordinación, fluidez, ritmo, actividad, estabilidad y variedad con énfasis específico en baile.</div>
+<div id="aiStatus">Motor v21: evaluación especializada activa · modelo entrenable aún sin datos etiquetados</div>
+<label style="display:block;margin:8px 0 5px;">Modo de evaluación</label>
+<select id="evaluationMode" style="width:100%;padding:8px;border-radius:8px;background:#102a55;color:white;border:1px solid #00e5ff;margin-bottom:7px;">
+<option value="timed">Evaluar por tiempo</option><option value="free">Evaluar de manera libre</option>
+</select>
+<div id="evaluationTimeBox"><label style="display:block;margin:4px 0 5px;">Duración</label>
+<select id="evaluationDuration" style="width:100%;padding:8px;border-radius:8px;background:#102a55;color:white;border:1px solid #00e5ff;margin-bottom:7px;">
+<option value="60">1 minuto</option><option value="120">2 minutos</option><option value="180">3 minutos</option><option value="240">4 minutos</option><option value="300">5 minutos</option>
+</select></div>
+<div id="evaluationTimer" style="font-size:24px;font-weight:bold;text-align:center;color:#00e5ff;margin:5px 0;">01:00</div>
+<button id="evaluationStart" style="width:100%;padding:9px;border-radius:12px;margin-bottom:6px;">Comenzar evaluación</button>
+<button id="evaluationPause" style="width:100%;padding:7px;border-radius:12px;margin-bottom:6px;display:none;">Pausar evaluación</button>
+<button id="evaluationFinish" style="width:100%;padding:7px;border-radius:12px;margin-bottom:6px;display:none;">Finalizar evaluación</button>
+<button id="evaluationReset" style="width:100%;padding:7px;border-radius:12px;">Reiniciar puntuación</button>
+<div id="evaluationScore">--</div>
+<div class="evalRow"><span>Actividad</span><span id="evActivity">--</span></div><div class="evalBar"><div class="evalFill" id="barActivity"></div></div>
+<div class="evalRow"><span>Coordinación</span><span id="evCoordination">--</span></div><div class="evalBar"><div class="evalFill" id="barCoordination"></div></div>
+<div class="evalRow"><span>Fluidez</span><span id="evFluidity">--</span></div><div class="evalBar"><div class="evalFill" id="barFluidity"></div></div>
+<div class="evalRow"><span>Estabilidad</span><span id="evStability">--</span></div><div class="evalBar"><div class="evalFill" id="barStability"></div></div>
+<div class="evalRow"><span>Variedad</span><span id="evVariety">--</span></div><div class="evalBar"><div class="evalFill" id="barVariety"></div></div>
+<div id="categoryBreakdown"></div>
+<div id="datasetActions"><button id="exportDataset">Exportar datos IA</button><button id="clearDataset">Borrar dataset local</button></div>
+</div></div>
+<div class="navRow"><button onclick="openPanel('settingsPanel')">← Configuración general</button><button onclick="openPanel('modulesPanel')">Módulos</button></div>
+</div>
+
+<!-- INTERFAZ -->
+<div id="interfacePanel" class="subPanel"><div class="closeBtn" onclick="closePanel('interfacePanel')">✕</div><h3 class="panelTitle">Interfaz</h3><p class="panelHint">Espacio reservado para personalizar la experiencia de uso.</p><div class="sectionLabel">Próximamente</div><p style="font-size:13px;line-height:1.5;">Tamaño de controles, posición de paneles, pantalla completa y comportamiento visual.</p><div class="navRow"><button onclick="openPanel('settingsPanel')">← Configuración general</button></div></div>
+
+<!-- DATOS -->
+<div id="dataPanel" class="subPanel"><div class="closeBtn" onclick="closePanel('dataPanel')">✕</div><h3 class="panelTitle">Datos y partidas</h3><p class="panelHint">Registro preparado para construir el dataset de entrenamiento de BodyBeat.</p><div class="sectionLabel">Dataset de evaluación</div><p style="font-size:13px;line-height:1.5;">Las sesiones guardan características del movimiento y resultados por categoría. Estos datos serán la base para entrenar los modelos especializados.</p><button class="categoryButton" onclick="exportBodyBeatDataset()">📦 Exportar dataset IA (JSON)</button><button class="categoryButton" onclick="clearBodyBeatDataset()">🗑️ Borrar dataset local</button><div id="datasetCount" style="font-size:12px;text-align:center;color:#9ff;margin-top:8px;">Sesiones guardadas: 0</div><div class="navRow"><button onclick="openPanel('settingsPanel')">← Configuración general</button></div></div>
+
+<!-- AVANZADO -->
+<div id="advancedPanel" class="subPanel"><div class="closeBtn" onclick="closePanel('advancedPanel')">✕</div><h3 class="panelTitle">Avanzado</h3><p class="panelHint">Opciones técnicas que iremos incorporando cuando sean necesarias.</p><div class="sectionLabel">Próximamente</div><p style="font-size:13px;line-height:1.5;">Diagnóstico, rendimiento y funciones experimentales.</p><div class="navRow"><button onclick="openPanel('settingsPanel')">← Configuración general</button></div></div>
+
+<!-- INFORMACIÓN -->
+<div id="aboutPanel" class="subPanel"><div class="closeBtn" onclick="closePanel('aboutPanel')">✕</div><h3 class="panelTitle">Acerca del proyecto</h3><p style="font-size:13px;line-height:1.6;">Aquí podremos explicar qué es BodyBeat, cuál es su propósito, cómo nació el proyecto y hacia dónde se dirige.</p><div class="navRow"><button onclick="showMainMenu()">← Menú principal</button></div></div>
+<div id="contactPanel" class="subPanel"><div class="closeBtn" onclick="closePanel('contactPanel')">✕</div><h3 class="panelTitle">Contacto</h3><p style="font-size:13px;line-height:1.6;">Sección reservada para los medios oficiales de contacto del proyecto.</p><div class="navRow"><button onclick="showMainMenu()">← Menú principal</button></div></div>
+<div id="collabPanel" class="subPanel"><div class="closeBtn" onclick="closePanel('collabPanel')">✕</div><h3 class="panelTitle">Colaboración</h3><p style="font-size:13px;line-height:1.6;">Aquí podremos explicar cómo colaborar con BodyBeat, aportar ideas, contenidos, pruebas o desarrollo.</p><div class="navRow"><button onclick="showMainMenu()">← Menú principal</button></div></div>
+<div id="helpPanel" class="subPanel"><div class="closeBtn" onclick="closePanel('helpPanel')">✕</div><h3 class="panelTitle">Ayuda / Guía</h3><p style="font-size:13px;line-height:1.6;">Sección preparada para una guía de uso, explicación de módulos y resolución de dudas.</p><div class="navRow"><button onclick="showMainMenu()">← Menú principal</button></div></div>
+
+<div id="assignPanel" class="subPanel">
+<div class="closeBtn" onclick="closePanel('assignPanel')">✕</div>
+<h3>Asignación Individual</h3>
+<button onclick="resetAudioAssignments()">Limpiar todos los archivos</button>
+<div class="assignGrid" id="assignGrid"></div>
+<input type="file" id="fileSingle" accept="audio/*" hidden>
+</div>
+
+<div id="loadPanel" class="subPanel">
+<div class="closeBtn" onclick="closePanel('loadPanel')">✕</div>
+<h3>Carga Masiva</h3>
+<button onclick="fileCenter.click()">Cargar Centro</button><br><br>
+<button onclick="fileSides.click()">Cargar Laterales</button>
+<input type="file" id="fileCenter" accept="audio/*" multiple hidden>
+<input type="file" id="fileSides" accept="audio/*" multiple hidden>
+</div>
+
+<video id="video" autoplay playsinline></video>
+<div id="gridTopZone"></div><div id="gridBottomZone"></div>
+<canvas id="canvas"></canvas>
+
+<script>
+const COLS=10, ROWS=8;
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+const video=document.getElementById("video");
+const orientationOverlay=document.getElementById("orientationOverlay");
+function updateOrientationGate(){
+  if(!orientationOverlay)return;
+  const mobilePortrait=window.matchMedia("(max-width:900px) and (orientation:portrait)").matches;
+  orientationOverlay.style.display=mobilePortrait?"flex":"none";
+}
+window.addEventListener("resize",updateOrientationGate);
+window.addEventListener("orientationchange",()=>setTimeout(updateOrientationGate,120));
+updateOrientationGate();
+
+const analysisCanvas=document.createElement("canvas");
+const analysisCtx=analysisCanvas.getContext("2d");
+
+let audioContext, masterGain, leftSectorGain, centerSectorGain, rightSectorGain;
+let activeLoops={};
+let centerSources={};
+let flashCells={};
+let sensitivity=80;
+let centerDuration=3;
+let ledMode="color";
+let interactionMode="light";
+let previousPose={};
+let bodyActiveCells={};
+let lastBodyTrigger=0;
+let ledColor="any";
+let colorTolerance=35;
+let calibratedHue=null;
+let calibratedRgb=null;
+let lastCenterCell=null;
+// Cada casillero tiene su propio buffer de audio.
+// Claves: "fila-columna" (por ejemplo "2-4").
+let centerBuffers={};
+let sideBuffers={};
+/* Bases laterales por defecto: 16 archivos, 8 a la izquierda y 8 a la derecha. */
+const DEFAULT_SIDE_AUDIO=[
+"assets/bases-laterales/1.mp3","assets/bases-laterales/2.mp3","assets/bases-laterales/3.mp3","assets/bases-laterales/4.mp3",
+"assets/bases-laterales/5.mp3","assets/bases-laterales/6.mp3","assets/bases-laterales/7.mp3","assets/bases-laterales/8.mp3",
+"assets/bases-laterales/9.wav","assets/bases-laterales/10.wav","assets/bases-laterales/11.wav","assets/bases-laterales/12.wav",
+"assets/bases-laterales/13.wav","assets/bases-laterales/14.wav","assets/bases-laterales/15.wav","assets/bases-laterales/16.wav"
+];
+let defaultSideAudioLoaded=false;
+let mirror=false;
+const MAX_LOOPS=4;
+let interactionPaused=false;
+let countdownActive=false;
+let gridVisible=true;
+
+/* AUDIO + CAMERA INIT — la primera solicitud ocurre SOLO tras una acción del usuario. */
+const activationOverlay=document.getElementById("overlay");
+let activationInProgress=false;
+async function loadDefaultSideBuffers(){
+  if(!audioContext || defaultSideAudioLoaded) return;
+  const cells=[];
+  for(let r=0;r<ROWS;r++) cells.push(r+"-0");
+  for(let r=0;r<ROWS;r++) cells.push(r+"-"+(COLS-1));
+  await Promise.all(DEFAULT_SIDE_AUDIO.map(async(path,i)=>{
+    try{
+      const response=await fetch(path,{cache:"no-cache"});
+      if(!response.ok) throw new Error("HTTP "+response.status);
+      const arrayBuffer=await response.arrayBuffer();
+      sideBuffers[cells[i]]=await audioContext.decodeAudioData(arrayBuffer);
+    }catch(err){console.warn("No se pudo cargar la base lateral por defecto:",path,err);}
+  }));
+  defaultSideAudioLoaded=true;
+  buildAssign();
+}
+activationOverlay.addEventListener("pointerdown", async()=>{
+  if(activationInProgress) return;
+  activationInProgress=true;
+  activationOverlay.textContent="Solicitando acceso a cámara y preparando BodyBeat…";
+try{
+  if(!audioContext){
+    audioContext=new (window.AudioContext||window.webkitAudioContext)();
+    masterGain=audioContext.createGain();
+    leftSectorGain=audioContext.createGain();
+    centerSectorGain=audioContext.createGain();
+    rightSectorGain=audioContext.createGain();
+    leftSectorGain.connect(masterGain);
+    centerSectorGain.connect(masterGain);
+    rightSectorGain.connect(masterGain);
+    masterGain.connect(audioContext.destination);
+    masterGain.gain.value=0.9;
+    leftSectorGain.gain.value=0.9;
+    centerSectorGain.gain.value=0.9;
+    rightSectorGain.gain.value=0.9;
+  }else if(audioContext.state==="suspended"){
+    await audioContext.resume();
+  }
+}catch(e){console.warn("Audio init:",e);}
+  try{ await loadDefaultSideBuffers(); }catch(e){ console.warn("Default side audio:",e); }
+try{
+  if(!cameraStream || !cameraStream.active){ await initCamera(); }
+  if(video.paused) await video.play().catch(()=>{});
+}catch(e){console.warn("Camera start:",e);}
+if(cameraStream && cameraStream.active){
+  activationOverlay.style.display="none";
+  activationOverlay.textContent="Toca para activar cámara y sonido";
+  activationInProgress=false;
+}else{
+  activationOverlay.textContent="No se pudo iniciar la cámara. Toca aquí para reintentar.";
+  activationInProgress=false;
+}
+});
+
+/* CAMERA - inicialización robusta */
+let cameraReady=false;
+let cameraStream=null;
+let cameraInitPromise=null;
+
+function resizeCameraCanvas(){
+  const vw=video.videoWidth || window.innerWidth;
+  const vh=video.videoHeight || window.innerHeight;
+  if(canvas.width!==vw || canvas.height!==vh){
+    canvas.width=vw;
+    canvas.height=vh;
+    analysisCanvas.width=vw;
+    analysisCanvas.height=vh;
+  }
+}
+
+function startRenderLoop(){
+  if(window._bodyMoveLoopStarted) return;
+  window._bodyMoveLoopStarted=true;
+  loop();
+}
+
+async function initCamera(){
+  // Evita solicitudes simultáneas de permiso: si la cámara ya se está inicializando,
+  // todos los llamados posteriores esperan la misma solicitud.
+  if(cameraInitPromise) return cameraInitPromise;
+  if(cameraStream && cameraStream.active){
+    if(video.paused) await video.play().catch(()=>{});
+    return;
+  }
+
+  cameraInitPromise=(async()=>{
+  // El bucle gráfico arranca aunque la cámara todavía esté negociando resolución.
+  // Así nunca queda una pantalla negra por depender de onloadeddata.
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+  analysisCanvas.width=canvas.width;
+  analysisCanvas.height=canvas.height;
+  startRenderLoop();
+
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    console.error("getUserMedia no está disponible.");
+    return;
+  }
+
+  try{
+    cameraStream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:"user"},
+      audio:false
+    });
+    video.srcObject=cameraStream;
+    video.muted=true;
+    video.autoplay=true;
+    video.playsInline=true;
+
+    video.onloadedmetadata=()=>{
+      resizeCameraCanvas();
+      video.play().catch(()=>{});
+      cameraReady=true;
+    };
+    video.onloadeddata=()=>{
+      resizeCameraCanvas();
+      cameraReady=true;
+    };
+    video.oncanplay=()=>{
+      resizeCameraCanvas();
+      cameraReady=true;
+      video.play().catch(()=>{});
+    };
+    await video.play().catch(()=>{});
+    resizeCameraCanvas();
+    cameraReady=video.readyState>=2;
+  }catch(err){
+    console.error("Camera error:",err);
+  } finally {
+    cameraInitPromise=null;
+  }
+  })();
+  return cameraInitPromise;
+}
+
+function renderFrameNow(){
+  if(video.videoWidth && video.videoHeight) resizeCameraCanvas();
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="#050b18";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  const g=getGridRect();
+  updateTopIndicatorLayout(g);
+  const cameraAvailable=video.readyState>=2 && video.videoWidth>0 && video.videoHeight>0;
+
+  if(cameraAvailable){
+    const vw=video.videoWidth, vh=video.videoHeight;
+    const scale=Math.max(g.w/vw,g.h/vh);
+    const dw=vw*scale, dh=vh*scale;
+    const dx=g.x+(g.w-dw)/2;
+    const dy=g.y+(g.h-dh)/2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(g.x,g.y,g.w,g.h);
+    ctx.clip();
+    if(mirror){
+      ctx.translate(g.x+g.w,g.y);
+      ctx.scale(-1,1);
+      ctx.drawImage(video,(g.w-dw)/2,(g.h-dh)/2,dw,dh);
+    }else{
+      ctx.drawImage(video,dx,dy,dw,dh);
+    }
+    ctx.restore();
+  }
+
+  if(gridVisible===true) drawGrid();
+  return cameraAvailable;
+}
+
+function loop(){
+  const cameraAvailable=renderFrameNow();
+  if(!interactionPaused && cameraAvailable && !bodyDetectionEnabled){
+    detectLight();
+  }
+  requestAnimationFrame(loop);
+}
+
+// El análisis corporal tiene su propio ciclo. Si MediaPipe tarda, nunca bloquea
+// el render de la cámara.
+function startPoseAnalysisLoop(){
+  if(window._poseAnalysisLoopStarted) return;
+  window._poseAnalysisLoopStarted=true;
+  const tick=()=>{
+    if(bodyDetectionEnabled) runPoseFrame();
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+window.addEventListener("resize",()=>{
+  if(video.videoWidth && video.videoHeight) resizeCameraCanvas();
+});
+// IMPORTANTE: no pedir getUserMedia al cargar la página. La primera solicitud
+// se realiza desde pointerdown sobre el cartel de activación, preservando el gesto del usuario.
+// Reintento seguro de cámara: no crea streams duplicados.
+async function ensureCameraRunning(){
+  if(cameraStream && cameraStream.active){
+    if(video.paused) await video.play().catch(()=>{});
+    return;
+  }
+  await initCamera();
+}
+window.addEventListener("focus",()=>{if(activationOverlay.style.display==="none") ensureCameraRunning().catch(()=>{});});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden && activationOverlay.style.display==="none") ensureCameraRunning().catch(()=>{});});
+
+startPoseAnalysisLoop();
+
+function updateTopIndicatorLayout(g){
+  const el=document.getElementById("topIndicator");
+  if(!el || !g) return;
+
+  // El canvas puede tener una resolución interna distinta al tamaño CSS de la pantalla.
+  // Convertimos las coordenadas de la grilla a píxeles reales de pantalla para que
+  // el indicador quede perfectamente centrado y con exactamente el mismo ancho.
+  const rect=canvas.getBoundingClientRect();
+  const sx=rect.width/(canvas.width||1);
+  const sy=rect.height/(canvas.height||1);
+  const gridX=rect.left+g.x*sx;
+  const gridW=g.w*sx;
+  const gridY=rect.top+g.y*sy;
+  const top=window.innerWidth<=700 ? 5 : 7;
+  const gap=3;
+  const height=Math.max(34, gridY-top-gap);
+
+  el.style.left=(gridX+gridW/2)+"px";
+  el.style.width=gridW+"px";
+  el.style.height=height+"px";
+  el.style.minHeight=height+"px";
+  if(typeof positionSectorVolumeBar==="function") positionSectorVolumeBar();
+}
+
+function getGridRect(){
+  // Área central 10:8, optimizada para móviles en horizontal.
+  // Aumentamos aproximadamente un 10% el tamaño visual respecto de v15,
+  // reduciendo solamente los márgenes libres para mantener libres indicador y controles.
+  const mobile = window.innerWidth<=700;
+  // v17: 5% más de área útil respecto de v16, manteniendo libres
+  // el indicador superior y la barra inferior.
+  const top = mobile ? 48 : 58;
+  const bottom = mobile ? 46 : 52;
+  const sideMargin = mobile ? 4 : 9;
+  const verticalMargin = mobile ? 2 : 4;
+  const availableW = Math.max(180, canvas.width - sideMargin*2);
+  const availableH = Math.max(120, canvas.height - top - bottom - verticalMargin*2);
+  const aspect = COLS/ROWS;
+  let w = Math.min(availableW, availableH*aspect);
+  let h = w/aspect;
+  if(h>availableH){ h=availableH; w=h*aspect; }
+  // v26: reducir un 5% el tamaño visual de la grilla/cámara, manteniéndolas
+  // perfectamente centradas y conservando la proporción original.
+  w*=0.95;
+  h*=0.95;
+  return {
+    x:(canvas.width-w)/2,
+    y:top+verticalMargin+(availableH-h)/2,
+    w,
+    h
+  };
+}
+
+function drawGrid(){
+// La grilla se dibuja exclusivamente cuando está habilitada.
+if(gridVisible!==true) return;
+const g=getGridRect();
+const w=g.w/COLS;
+const h=g.h/ROWS;
+
+for(let r=0;r<ROWS;r++){
+for(let c=0;c<COLS;c++){
+let drawCol = mirror ? (COLS-1-c) : c;
+let x=g.x+drawCol*w;
+let y=g.y+r*h;
+let key=r+"-"+c;
+
+ctx.fillStyle=(c===0||c===COLS-1)?"#003d2f":"rgba(0,90,0,0.2)";
+ctx.fillRect(x,y,w,h);
+
+if(centerBuffers[key] || sideBuffers[key]){
+ctx.fillStyle="rgba(106,0,255,0.42)";
+ctx.fillRect(x,y,w,h);
+}
+
+if(activeLoops[key] || centerSources[key]){
+ctx.fillStyle="rgba(0,0,0,0.38)";
+ctx.fillRect(x,y,w,h);
+ctx.strokeStyle="rgba(255,255,255,0.85)";
+ctx.lineWidth=2;
+ctx.strokeRect(x+1,y+1,w-2,h-2);
+ctx.lineWidth=1;
+}
+
+if(flashCells[key]){
+ctx.fillStyle="rgba(255,0,255,0.4)";
+ctx.fillRect(x,y,w,h);
+if(Date.now()-flashCells[key]>120) delete flashCells[key];
+}
+
+ctx.strokeStyle="rgba(0,255,255,0.6)";
+ctx.strokeRect(x,y,w,h);
+}
+}
+}
+
+/* CLICK */
+canvas.addEventListener("click",e=>{
+if(!audioContext) return;
+
+const rect=canvas.getBoundingClientRect();
+const scaleX=canvas.width/rect.width;
+const scaleY=canvas.height/rect.height;
+let x=(e.clientX-rect.left)*scaleX;
+let y=(e.clientY-rect.top)*scaleY;
+
+if(mirror) x = canvas.width - x;
+
+const g=getGridRect();
+if(x<g.x || x>g.x+g.w || y<g.y || y>g.y+g.h) return;
+const col=Math.floor((x-g.x)/(g.w/COLS));
+const row=Math.floor((y-g.y)/(g.h/ROWS));
+if(row<0||row>=ROWS||col<0||col>=COLS) return;
+triggerCell(row,col);
+});
+
+function triggerCell(row,col){
+if(interactionPaused) return;
+let key=row+"-"+col;
+
+if(col===0||col===COLS-1){
+if(activeLoops[key]){activeLoops[key].stop();delete activeLoops[key];return;}
+if(Object.keys(activeLoops).length>=MAX_LOOPS) return;
+
+if(sideBuffers[key]){
+let src=audioContext.createBufferSource();
+src.buffer=sideBuffers[key];
+src.loop=true;
+src.connect(masterGain);
+src.start();
+activeLoops[key]=src;
+}else{
+let osc=audioContext.createOscillator();
+osc.type="sawtooth";osc.frequency.value=80+row*15;
+osc.connect(masterGain);osc.start();
+activeLoops[key]=osc;
+}
+}else{
+playCenter(row,col);
+flashCells[key]=Date.now();
+}
+}
+
+/* DETECCIÓN LED */
+function rgbToHsv(r,g,b){
+r/=255;g/=255;b/=255;
+let max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+let h=0;
+if(d!==0){
+if(max===r) h=60*((g-b)/d%6);
+else if(max===g) h=60*((b-r)/d+2);
+else h=60*((r-g)/d+4);
+if(h<0) h+=360;
+}
+return {h,s:max===0?0:d/max,v:max};
+}
+
+function hueDistance(a,b){
+let d=Math.abs(a-b); return Math.min(d,360-d);
+}
+
+function presetHue(name){
+return {red:0, yellow:60, green:120, cyan:180, blue:240, magenta:300}[name];
+}
+
+function detectLight(){
+analysisCtx.drawImage(video,0,0);
+let img=analysisCtx.getImageData(0,0,analysisCanvas.width,analysisCanvas.height);
+let data=img.data;
+
+let global=0;
+for(let i=0;i<data.length;i+=40) global+=data[i]+data[i+1]+data[i+2];
+global/=(data.length/40);
+
+const ag=getGridRect();
+const cellW=ag.w/COLS;
+const cellH=ag.h/ROWS;
+let best=null;
+let bestScore=-Infinity;
+
+for(let r=0;r<ROWS;r++){
+for(let c=1;c<COLS-1;c++){
+let total=0,count=0,colorScore=0,brightScore=0;
+for(let y=Math.floor(ag.y+r*cellH);y<Math.floor(ag.y+(r+1)*cellH);y+=6){
+for(let x=Math.floor(ag.x+c*cellW);x<Math.floor(ag.x+(c+1)*cellW);x+=6){
+let idx=(Math.floor(y)*analysisCanvas.width+Math.floor(x))*4;
+let rr=data[idx],gg=data[idx+1],bb=data[idx+2];
+let hsv=rgbToHsv(rr,gg,bb);
+total+=rr+gg+bb; count++;
+
+let hueTarget=null;
+if(ledColor==="custom" && calibratedHue!==null) hueTarget=calibratedHue;
+else if(ledColor!=="any") hueTarget=presetHue(ledColor);
+
+if(hueTarget!==null){
+let hd=hueDistance(hsv.h,hueTarget);
+let hueMatch=Math.max(0,1-hd/Math.max(1,colorTolerance));
+// Saturación evita que blancos/grises muy brillantes sean tomados como color.
+colorScore+=hueMatch*hsv.s;
+}else{
+colorScore+=hsv.s;
+}
+brightScore+=hsv.v;
+}
+}
+
+let avg=total/count;
+let brightnessContrast=avg-global;
+let avgColor=colorScore/count;
+let avgBright=brightScore/count;
+
+// Los tres modos conservan el comportamiento anterior de brillo y agregan
+// detección cromática cuando corresponde.
+let score;
+if(ledMode==="brightness") score=brightnessContrast;
+else if(ledColor==="any") score=avgColor*255 + Math.max(0,brightnessContrast);
+else if(ledMode==="color") score=avgColor*255;
+else score=avgColor*255 + Math.max(0,brightnessContrast)*0.8;
+
+if(score>bestScore){bestScore=score;best={row:r,col:c,brightnessContrast,avgColor,avgBright};}
+}
+}
+
+let threshold=(ledMode==="brightness")?sensitivity:(ledColor==="any"?sensitivity*0.35:sensitivity*0.5);
+if(!best || bestScore<threshold || (ledMode!=="brightness" && best.avgColor<0.08)){
+lastCenterCell=null; return;
+}
+
+let col=mirror?(COLS-1-best.col):best.col;
+let key=best.row+"-"+col;
+if(key!==lastCenterCell){
+playCenter(best.row,col);
+flashCells[key]=Date.now();
+lastCenterCell=key;
+}
+}
+
+function calibrateLED(){
+if(!analysisCanvas.width || !analysisCanvas.height){
+calibrationStatus.textContent="La cámara aún no está lista."; return;
+}
+analysisCtx.drawImage(video,0,0);
+let img=analysisCtx.getImageData(0,0,analysisCanvas.width,analysisCanvas.height);
+let data=img.data;
+let best=null,bestValue=-1;
+const ag=getGridRect();
+const cellW=ag.w/COLS, cellH=ag.h/ROWS;
+for(let r=0;r<ROWS;r++){
+for(let c=1;c<COLS-1;c++){
+for(let y=Math.floor(ag.y+r*cellH);y<Math.floor(ag.y+(r+1)*cellH);y+=8){
+for(let x=Math.floor(ag.x+c*cellW);x<Math.floor(ag.x+(c+1)*cellW);x+=8){
+let idx=(y*analysisCanvas.width+x)*4;
+let rr=data[idx],gg=data[idx+1],bb=data[idx+2];
+let hsv=rgbToHsv(rr,gg,bb);
+let value=hsv.s*hsv.v;
+if(value>bestValue){bestValue=value;best={rr,gg,bb,hsv};}
+}
+}
+}
+}
+if(!best || best.hsv.s<0.15){
+calibrationStatus.textContent="No encontré un color suficientemente definido. Enciende el LED y vuelve a calibrar.";
+return;
+}
+calibratedHue=best.hsv.h;
+calibratedRgb={r:best.rr,g:best.gg,b:best.bb};
+ledColor="custom";
+ledColorSelect.value="custom";
+calibrationStatus.textContent=`Calibrado: RGB ${best.rr},${best.gg},${best.bb} / ${Math.round(best.hsv.h)}°`;
+}
+
+function playCenter(row,col){
+let key=row+"-"+col;
+
+// Un solo sonido activo por casillero. Si se vuelve a activar,
+// se corta el anterior y el audio comienza nuevamente desde el inicio.
+if(centerSources[key]){
+try{centerSources[key].stop();}catch(e){}
+centerSources[key]=null;
+}
+
+if(centerBuffers[key]){
+let src=audioContext.createBufferSource();
+src.buffer=centerBuffers[key];
+src.connect(centerSectorGain);
+centerSources[key]=src;
+
+src.onended=()=>{
+if(centerSources[key]===src) centerSources[key]=null;
+};
+
+src.start();
+
+// La duración configurada limita cuánto tiempo puede sonar el archivo.
+// Si el archivo termina antes, se detiene naturalmente.
+if(centerDuration>0){
+try{src.stop(audioContext.currentTime+centerDuration);}catch(e){}
+}
+}else{
+let osc=audioContext.createOscillator();
+osc.type="triangle";osc.frequency.value=300+row*30+col*8;
+osc.connect(centerSectorGain);
+centerSources[key]=osc;
+osc.onended=()=>{
+if(centerSources[key]===osc) centerSources[key]=null;
+};
+osc.start();
+osc.stop(audioContext.currentTime+0.2);
+}
+}
+
+/* BODYBEAT v21 — CAPA DE EVALUACIÓN POR CATEGORÍAS + DATASET IA */
+const BodyEvaluationProfiles={
+  dance:{name:"Baile",description:"Prioriza coordinación, fluidez, ritmo implícito, actividad y variedad.",weights:{activity:.16,coordination:.25,fluidity:.25,stability:.10,variety:.24}},
+  aura:{name:"Farmear Aura",description:"Evalúa presencia corporal, control, confianza visual, dinamismo y originalidad del movimiento.",weights:{activity:.12,coordination:.15,fluidity:.18,stability:.25,variety:.30}},
+  theater:{name:"Teatro",description:"Prioriza expresividad corporal, control, variedad y cambios de dinámica.",weights:{activity:.14,coordination:.16,fluidity:.22,stability:.24,variety:.24}},
+  music:{name:"Música / Ritmo",description:"Prioriza regularidad, coordinación y continuidad del movimiento para acompañar un pulso musical.",weights:{activity:.14,coordination:.28,fluidity:.25,stability:.18,variety:.15}},
+  general:{name:"Movimiento general",description:"Perfil equilibrado para analizar movimiento corporal sin una disciplina específica.",weights:{activity:.18,coordination:.25,fluidity:.22,stability:.18,variety:.17}}
+};
+let bodyEvaluationCategory="dance";
+const BODYBEAT_DATASET_KEY="bodybeat_ai_dataset_v21";
+function getEvaluationProfile(){return BodyEvaluationProfiles[bodyEvaluationCategory]||BodyEvaluationProfiles.general;}
+function updateCategoryUI(){
+  const s=document.getElementById("categorySelector"), d=document.getElementById("categoryDescription");
+  const p=getEvaluationProfile(); if(s)s.value=bodyEvaluationCategory; if(d)d.textContent=p.description;
+  const st=document.getElementById("aiStatus"); if(st)st.textContent="Motor v21: "+p.name+" · puntuación especializada · modelo entrenable preparado";
+}
+function safeNumber(v){return Number.isFinite(v)?v:0;}
+function saveBodyBeatSession(result,features){
+  try{
+    const data=JSON.parse(localStorage.getItem(BODYBEAT_DATASET_KEY)||"[]");
+    data.push({version:"21",timestamp:new Date().toISOString(),category:bodyEvaluationCategory,categoryName:getEvaluationProfile().name,duration:result?.duration||0,result,features});
+    localStorage.setItem(BODYBEAT_DATASET_KEY,JSON.stringify(data)); updateDatasetCount();
+  }catch(e){console.warn("No se pudo guardar dataset",e);}
+}
+function loadBodyBeatDataset(){try{return JSON.parse(localStorage.getItem(BODYBEAT_DATASET_KEY)||"[]");}catch(e){return [];}}
+function updateDatasetCount(){const e=document.getElementById("datasetCount");if(e)e.textContent="Sesiones guardadas: "+loadBodyBeatDataset().length;}
+function exportBodyBeatDataset(){
+  const payload={format:"BodyBeat-AI-Dataset",version:"21",generatedAt:new Date().toISOString(),sessions:loadBodyBeatDataset()};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}); const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="bodybeat_ai_dataset_v21.json"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function clearBodyBeatDataset(){if(confirm("¿Borrar todas las sesiones del dataset local de BodyBeat?")){localStorage.removeItem(BODYBEAT_DATASET_KEY);updateDatasetCount();}}
+function renderCategoryBreakdown(m){
+  const e=document.getElementById("categoryBreakdown"); if(!e||!m)return;
+  const w=getEvaluationProfile().weights;
+  e.innerHTML='<div class="evalMini"><span>Perfil</span><b>'+getEvaluationProfile().name+'</b></div>'+
+    '<div class="evalMini"><span>Peso Actividad</span><span>'+Math.round(w.activity*100)+'%</span></div>'+
+    '<div class="evalMini"><span>Peso Coordinación</span><span>'+Math.round(w.coordination*100)+'%</span></div>'+
+    '<div class="evalMini"><span>Peso Fluidez</span><span>'+Math.round(w.fluidity*100)+'%</span></div>'+
+    '<div class="evalMini"><span>Peso Estabilidad</span><span>'+Math.round(w.stability*100)+'%</span></div>'+
+    '<div class="evalMini"><span>Peso Variedad</span><span>'+Math.round(w.variety*100)+'%</span></div>';
+}
+updateCategoryUI(); updateDatasetCount();
+
+/* BODY SCORING MODULE — independiente del detector y del motor de sonido */
+const BodyScoringModule={
+  enabled:false,
+  paused:false,
+  startedAt:0,
+  elapsedBeforePause:0,
+  durationLimit:0,
+  timerId:null,
+  samples:[],
+  lastSampleTime:0,
+  lastEnergy:0,
+  directionChanges:0,
+  lastDirection:{},
+  maxSamples:900,
+  start(){
+    if(this.enabled) return;
+    this.enabled=true; this.paused=false; this.startedAt=performance.now(); this.elapsedBeforePause=0;
+    this.samples=[]; this.featureFrames=[]; this.lastSampleTime=0; this.lastEnergy=0; this.directionChanges=0; this.lastDirection={}; this._prev={}; this._prevDir={};
+    this.durationLimit=document.getElementById("evaluationMode").value==="timed" ? parseInt(document.getElementById("evaluationDuration").value,10) : 0;
+    clearInterval(this.timerId); this.timerId=setInterval(()=>this.updateTimer(),250); this.updateTimer();
+    setEvalStatus("Evaluación en curso…"); setTopIndicator("Evaluando tu movimiento…"); setTopEvaluationScoreVisible(true); updateEvaluationControls();
+  },
+  pause(){
+    if(!this.enabled || this.paused) return;
+    this.elapsedBeforePause+=Math.max(0,(performance.now()-this.startedAt)/1000); this.paused=true;
+    setEvalStatus("Evaluación pausada"); setTopIndicator("Evaluación pausada"); this.updateTimer(); updateEvaluationControls();
+  },
+  resume(){
+    if(!this.enabled || !this.paused) return;
+    this.startedAt=performance.now(); this.paused=false; this.lastSampleTime=0;
+    setEvalStatus("Evaluación en curso…"); setTopIndicator("Evaluando tu movimiento…"); this.updateTimer(); updateEvaluationControls();
+  },
+  elapsed(){return this.elapsedBeforePause+(this.enabled&&!this.paused?Math.max(0,(performance.now()-this.startedAt)/1000):0);},
+  updateTimer(){
+    const el=document.getElementById("evaluationTimer"); if(!el)return;
+    const elapsed=this.elapsed(); const value=this.durationLimit>0?Math.max(0,this.durationLimit-elapsed):elapsed;
+    el.textContent=formatEvalTime(value);
+    setTopEvaluationTimer(formatEvalTime(value));
+    if(this.durationLimit>0 && value<=0 && this.enabled)this.finish(true);
+  },
+  reset(){
+    this.enabled=false; this.paused=false; clearInterval(this.timerId); this.timerId=null; this.startedAt=0; this.elapsedBeforePause=0; this.durationLimit=0;
+    this.samples=[]; this.featureFrames=[]; this.lastSampleTime=0; this.lastEnergy=0; this.directionChanges=0; this.lastDirection={}; this._prev={}; this._prevDir={};
+    const finalOverlay=document.getElementById("finalResultOverlay"); if(finalOverlay) finalOverlay.style.display="none";
+    updateEvaluationUI(null); setEvalStatus("Preparado para evaluar"); setTopIndicator("Listo para comenzar"); setTopEvaluationTimer(""); setTopEvaluationScoreVisible(false); const timer=document.getElementById("evaluationTimer"); if(timer)timer.textContent="00:00"; updateEvaluationControls();
+  },
+  finish(auto=false){
+    if(!this.enabled)return;
+    if(!this.paused)this.elapsedBeforePause+=Math.max(0,(performance.now()-this.startedAt)/1000);
+    this.enabled=false; this.paused=false; clearInterval(this.timerId); this.timerId=null; this.updateTimer();
+    setEvalStatus(auto?"Tiempo cumplido · evaluación finalizada":"Evaluación finalizada"); setTopIndicator(auto?"Evaluación finalizada · tiempo cumplido":"Evaluación finalizada");
+    const finalResult=this.compute(); if(finalResult){saveBodyBeatSession(finalResult,this.featureFrames.slice()); updateEvaluationUI(finalResult); showFinalEvaluation(finalResult);} setTopEvaluationTimer(""); setTopEvaluationScoreVisible(true); updateEvaluationControls();
+  },
+  stop(){this.finish(false);},
+  sample(landmarks){
+    if(!this.enabled || this.paused || !landmarks) return;
+    const now=performance.now();
+    if(this.lastSampleTime && now-this.lastSampleTime<80) return;
+    this.lastSampleTime=now;
+    const points=[0,11,12,13,14,15,16,23,24,25,26,27,28];
+    let speeds=[], positions=[];
+    for(const id of points){
+      const p=landmarks[id]; if(!p || (p.visibility!=null&&p.visibility<.25)) continue;
+      const prev=this._prev?.[id];
+      if(prev){
+        const dt=Math.max(.016,(now-prev.t)/1000);
+        const dx=p.x-prev.x,dy=p.y-prev.y;
+        speeds.push(Math.hypot(dx,dy)/dt);
+      }
+      positions.push({id,x:p.x,y:p.y});
+    }
+    if(!this._prev) this._prev={};
+    for(const id of points){const p=landmarks[id];if(p)this._prev[id]={x:p.x,y:p.y,t:now};}
+    if(!speeds.length) return;
+    const avgSpeed=speeds.reduce((a,b)=>a+b,0)/speeds.length;
+    const energy=Math.min(1,avgSpeed/1.15);
+    const delta=Math.abs(energy-this.lastEnergy);
+    const continuity=1-Math.min(1,delta/0.45);
+    this.lastEnergy=energy;
+    // Cambios de dirección de las manos y cabeza: proxy simple de coordinación/variedad.
+    for(const id of [0,15,16]){
+      const prev=this._prevDir?.[id];
+      const p=landmarks[id];
+      if(p && prev){
+        const dx=p.x-prev.x,dy=p.y-prev.y;
+        const mag=Math.hypot(dx,dy);
+        if(mag>.008){
+          const dir=Math.atan2(dy,dx);
+          if(this.lastDirection[id]!=null && Math.abs(Math.atan2(Math.sin(dir-this.lastDirection[id]),Math.cos(dir-this.lastDirection[id])))>1.4) this.directionChanges++;
+          this.lastDirection[id]=dir;
+        }
+      }
+    }
+    if(!this._prevDir)this._prevDir={};
+    for(const id of [0,15,16]){const p=landmarks[id];if(p)this._prevDir[id]={x:p.x,y:p.y};}
+    this.samples.push({t:now,energy,continuity,activePoints:speeds.length});
+    const featureFrame={t:Math.round(now),energy,continuity,activePoints:speeds.length,avgSpeed,delta,directionChanges:this.directionChanges,category:bodyEvaluationCategory};
+    this.featureFrames.push(featureFrame);
+    if(this.samples.length>this.maxSamples)this.samples.shift();
+    if(this.featureFrames.length>this.maxSamples)this.featureFrames.shift();
+    updateEvaluationUI(this.compute());
+  },
+  compute(){
+    if(!this.samples.length)return null;
+    const n=this.samples.length;
+    const activity=this.samples.reduce((a,s)=>a+s.energy,0)/n;
+    const fluidity=this.samples.reduce((a,s)=>a+s.continuity,0)/n;
+    const active=this.samples.reduce((a,s)=>a+s.activePoints,0)/n/13;
+    // Coordinación: combina participación de múltiples puntos con actividad corporal.
+    const coordination=Math.min(1,Math.max(0,active*.55+activity*.45));
+    // Estabilidad: evita penalizar movimiento; mide continuidad y control de cambios.
+    const stability=Math.min(1,Math.max(0,fluidity*.7+(1-Math.min(1,activity*.45))*.3));
+    const duration=Math.max(1,(this.samples[n-1].t-this.samples[0].t)/1000);
+    const variety=Math.min(1,(this.directionChanges/Math.max(4,duration*1.4))*.65+Math.min(1,n/180)*.35);
+    const w=getEvaluationProfile().weights;
+    const score=Math.round((activity*w.activity+coordination*w.coordination+fluidity*w.fluidity+stability*w.stability+variety*w.variety)*100);
+    return {score,activity:activity*100,coordination:coordination*100,fluidity:fluidity*100,stability:stability*100,variety:variety*100,duration,category:bodyEvaluationCategory,categoryName:getEvaluationProfile().name,weights:w};
+  }
+};
+function setEvalStatus(text){const e=document.getElementById("evaluationStatus");if(e)e.textContent=text;}
+function setEvalMetric(name,val){const v=Math.max(0,Math.min(100,val));const e=document.getElementById("ev"+name);const b=document.getElementById("bar"+name);if(e)e.textContent=Math.round(v);if(b)b.style.width=v+"%";}
+function updateEvaluationUI(m){
+  const score=document.getElementById("evaluationScore");
+  const topScore=document.getElementById("topEvalScore");
+  const topTimer=document.getElementById("topEvalTimer");
+  if(!m){
+    if(score)score.textContent="--";
+    ['Activity','Coordination','Fluidity','Stability','Variety'].forEach(x=>setEvalMetric(x,0));
+    if(topScore)topScore.style.display="none";
+    return;
+  }
+  if(score)score.textContent=m.score;
+  if(topScore){topScore.textContent="Puntuación: "+m.score;topScore.style.display="inline";}
+  if(topTimer)topTimer.style.display="inline";
+  setEvalMetric("Activity",m.activity);setEvalMetric("Coordination",m.coordination);setEvalMetric("Fluidity",m.fluidity);setEvalMetric("Stability",m.stability);setEvalMetric("Variety",m.variety); renderCategoryBreakdown(m);
+  setEvalStatus("Evaluando · "+Math.floor(m.duration)+" s");
+  setTopIndicator("Evaluando tu movimiento…");
+}
+
+function setTopIndicator(text){
+  const e=document.getElementById("topMessage");
+  if(e)e.textContent=text;
+}
+function setTopEvaluationTimer(text){
+  const e=document.getElementById("topEvalTimer");
+  if(e){e.textContent=text;e.style.display=text?"inline":"none";}
+}
+function setTopEvaluationScoreVisible(visible){
+  const e=document.getElementById("topEvalScore");
+  if(e)e.style.display=visible?"inline":"none";
+}
+function stopAllSounds(){
+  for(const k in activeLoops){try{activeLoops[k].stop();}catch(e){} delete activeLoops[k];}
+  for(const k in centerSources){try{centerSources[k].stop();}catch(e){} delete centerSources[k];}
+  lastCenterCell=null;
+}
+function updateQuickPauseUI(){
+  const b=document.getElementById("quickPause");
+  if(!b)return;
+  b.textContent=interactionPaused?"▶":"⏸";
+  b.title=interactionPaused?"Reanudar interacción":"Pausar interacción";
+  b.classList.toggle("paused",interactionPaused);
+}
+async function setInteractionPaused(paused){
+  interactionPaused=!!paused;
+  updateQuickPauseUI();
+  if(interactionPaused){
+    try{video.pause();}catch(e){}
+    if(BodyScoringModule.enabled && !BodyScoringModule.paused) BodyScoringModule.pause();
+    if(audioContext && audioContext.state==="running") await audioContext.suspend();
+    setTopIndicator("Interacción pausada");
+  }else{
+    try{await video.play();}catch(e){}
+    if(audioContext && audioContext.state==="suspended") await audioContext.resume();
+    if(BodyScoringModule.enabled && BodyScoringModule.paused) BodyScoringModule.resume();
+    setTopIndicator(BodyScoringModule.enabled?"Evaluando tu movimiento…":"Listo para interactuar");
+  }
+}
+function getFinalScoreMessage(score){
+  if(score<20) return "Cada movimiento cuenta. ¡Sigue adelante!";
+  if(score<40) return "Vas muy bien, sigue mejorando.";
+  if(score<60) return "¡Genial! Falta poco para la cima.";
+  if(score<80) return "¡Muy buen nivel! Ya estás destacando.";
+  if(score<95) return "¡Excelente! Estás muy cerca de la cima.";
+  return "¡Increíble! Llegaste a la cima. ¡Qué nivel!";
+}
+function showFinalEvaluation(result){
+  if(!result) return;
+  const overlay=document.getElementById("finalResultOverlay"), card=document.getElementById("finalResultCard");
+  const num=document.getElementById("finalScoreNumber"), msg=document.getElementById("finalScoreMessage");
+  if(!overlay||!num||!msg) return;
+  num.textContent=Math.round(result.score); msg.textContent=getFinalScoreMessage(result.score);
+  card.style.animation="none"; void card.offsetWidth; card.style.animation="finalPop .8s cubic-bezier(.2,1.5,.4,1) both,finalGlow 1.7s ease-in-out infinite alternate";
+  overlay.querySelectorAll(".celebrateParticle").forEach(e=>e.remove());
+  const count=42;
+  for(let i=0;i<count;i++){
+    const p=document.createElement("span"); p.className="celebrateParticle";
+    const angle=(Math.PI*2*i/count)+(Math.random()-.5)*.35, dist=180+Math.random()*Math.min(innerWidth,innerHeight)*.34;
+    p.style.setProperty("--dx",Math.cos(angle)*dist+"px"); p.style.setProperty("--dy",Math.sin(angle)*dist+"px");
+    p.style.setProperty("--rot",(Math.random()*900-450)+"deg"); p.style.background=i%2?"#00e5ff":"#ff00ff"; p.style.animationDelay=(Math.random()*.22)+"s"; overlay.appendChild(p);
+  }
+  overlay.style.display="flex";
+  clearTimeout(window._finalEvaluationTimeout);
+  window._finalEvaluationTimeout=setTimeout(()=>{overlay.style.display="none";},5500);
+}
+
+async function runEvaluationCountdown(){
+  if(countdownActive || interactionPaused || BodyScoringModule.enabled) return;
+  countdownActive=true;
+  closeMain();
+  document.querySelectorAll('.subPanel').forEach(p=>p.style.display='none');
+  const overlay=document.getElementById("countdownOverlay");
+  const text=document.getElementById("countdownText");
+  overlay.style.display="flex";
+  for(const n of [3,2,1]){
+    text.textContent=n;
+    await new Promise(r=>setTimeout(r,700));
+  }
+  text.textContent="¡EVALUANDO!";
+  await new Promise(r=>setTimeout(r,650));
+  overlay.style.display="none";
+  countdownActive=false;
+  if(!interactionPaused) BodyScoringModule.start();
+}
+
+/* BODY DETECTION — MediaPipe Pose */
+let pose=null, poseReady=false, poseBusy=false, lastPoseSend=0;
+let bodyDetectionEnabled=false;
+let bodySensitivity=0.55;
+let bodyMode="movement_position";
+let lastBodyCell=null;
+let bodyPrev={};
+
+function setBodyStatus(text,color="#9ff"){
+  const el=document.getElementById("bodyStatus");
+  if(el){el.textContent="Detector corporal: "+text;el.style.color=color;}
+}
+
+function loadPoseDetector(){
+  if(poseReady || pose) return;
+  if(typeof Pose==="undefined"){
+    setBodyStatus("cargando detector corporal...","#ffd080");
+    if(window._poseScriptLoading) return;
+    window._poseScriptLoading=true;
+    const script=document.createElement("script");
+    script.src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js";
+    script.async=true;
+    script.onload=()=>{
+      window._poseScriptLoading=false;
+      try{ loadPoseDetector(); }catch(err){
+        console.error(err);
+        setBodyStatus("error al iniciar el detector","#ff8080");
+      }
+    };
+    script.onerror=()=>{
+      window._poseScriptLoading=false;
+      setBodyStatus("no se pudo cargar MediaPipe Pose","#ff8080");
+    };
+    document.head.appendChild(script);
+    return;
+  }
+  pose=new Pose({
+    locateFile:file=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+  });
+  pose.setOptions({
+    modelComplexity:0,
+    smoothLandmarks:true,
+    enableSegmentation:false,
+    minDetectionConfidence:0.35,
+    minTrackingConfidence:0.35
+  });
+  pose.onResults(onPoseResults);
+  poseReady=true;
+  setBodyStatus("listo","#80ffb0");
+}
+
+function onPoseResults(results){
+  poseBusy=false;
+  lastPoseSend=performance.now();
+  if(!bodyDetectionEnabled) return;
+
+  const lm=results.poseLandmarks;
+  if(!lm){
+    lastBodyCell=null;
+    setBodyStatus("no se detecta una persona","#ffd080");
+    return;
+  }
+
+  setBodyStatus("persona detectada","#80ffb0");
+  BodyScoringModule.sample(lm);
+
+  const points=[
+    ["mano_izq",15,1.60],["mano_der",16,1.60],
+    ["cabeza",0,1.25],["codo_izq",13,1.05],["codo_der",14,1.05],
+    ["hombro_izq",11,.85],["hombro_der",12,.85],
+    ["rodilla_izq",25,.65],["rodilla_der",26,.65],
+    ["tobillo_izq",27,.55],["tobillo_der",28,.55]
+  ];
+
+  let best=null;
+  const now=performance.now();
+
+  for(const [name,id,weight] of points){
+    const p=lm[id];
+    if(!p || (p.visibility!=null && p.visibility<0.30)) continue;
+
+    let x=p.x, y=p.y;
+    if(mirror) x=1-x;
+
+    const g=getGridRect();
+    const gy=(g.h>0)?Math.max(0,Math.min(1,(y*g.h+g.y)/canvas.height)):y;
+    const col=Math.max(0,Math.min(COLS-1,Math.floor(x*COLS)));
+    const row=Math.max(0,Math.min(ROWS-1,Math.floor(((y*canvas.height)-g.y)/(g.h)*ROWS)));
+    if(col===0 || col===COLS-1) continue;
+
+    const prev=bodyPrev[name];
+    const movement=prev ? Math.hypot(x-prev.x,y-prev.y) : 0;
+    bodyPrev[name]={x,y,t:now};
+
+    const movementScore=Math.min(1,movement/0.035);
+    const visibility=p.visibility==null?1:p.visibility;
+
+    let score;
+    if(bodyMode==="movement") score=movementScore*weight;
+    else if(bodyMode==="position") score=visibility*weight;
+    else score=(movementScore*.70+visibility*.30)*weight;
+
+    if(!best || score>best.score)
+      best={row,col,score,movement:movementScore,name};
+  }
+
+  if(!best) return;
+
+  const threshold=Math.max(0.015,(1-bodySensitivity)*0.55);
+  if(bodyMode!=="position" && best.movement<threshold) return;
+
+  const key=best.row+"-"+best.col;
+  if(key!==lastBodyCell){
+    triggerCell(best.row,best.col);
+    flashCells[key]=Date.now();
+    lastBodyCell=key;
+  }
+}
+
+function runPoseFrame(){
+  // El render de la cámara debe tener prioridad. MediaPipe no se ejecuta en cada
+  // frame de pantalla: lo limitamos a ~8 análisis/segundo y nunca permitimos
+  // dos análisis simultáneos. Así la imagen de cámara continúa fluida.
+  if(interactionPaused || !bodyDetectionEnabled || !poseReady || poseBusy || video.readyState<2) return;
+  const now=performance.now();
+  if(now-lastPoseSend<125) return;
+  lastPoseSend=now;
+  poseBusy=true;
+  Promise.resolve(pose.send({image:video}))
+    .catch((err)=>{
+      console.error("Pose error:",err);
+      setBodyStatus("error al analizar la cámara","#ff8080");
+    })
+    .finally(()=>{
+      // Por seguridad, aunque MediaPipe no entregue resultados, liberamos el
+      // bloqueo para que el siguiente análisis pueda ejecutarse.
+      poseBusy=false;
+    });
+}
+
+/* ASSIGN GRID */
+const assignGrid=document.getElementById("assignGrid");
+let selectedCell=null;
+
+function buildAssign(){
+assignGrid.innerHTML="";
+for(let r=0;r<ROWS;r++){
+for(let c=0;c<COLS;c++){
+let div=document.createElement("div");
+let key=r+"-"+c;
+div.className="assignCell "+(c===0||c===COLS-1?"sideCell":"centerCell");
+
+// El estado "cargado" se comprueba por casillero, no por fila.
+// Así cada posición puede tener un audio diferente.
+if(c>0&&c<COLS-1 && centerBuffers[key]) div.classList.add("loaded");
+if((c===0||c===COLS-1) && sideBuffers[key]) div.classList.add("loaded");
+
+div.innerText=key;
+div.onclick=()=>{
+selectedCell={r,c};
+fileSingle.value="";
+fileSingle.click();
+};
+assignGrid.appendChild(div);
+}
+}
+}
+buildAssign();
+
+fileSingle.onchange=e=>{
+let file=e.target.files[0];
+if(!file||!selectedCell) return;
+
+let targetKey=selectedCell.r+"-"+selectedCell.c;
+let isSide=(selectedCell.c===0||selectedCell.c===COLS-1);
+
+let reader=new FileReader();
+reader.onload=ev=>{
+audioContext.decodeAudioData(ev.target.result,b=>{
+if(isSide){
+sideBuffers[targetKey]=b;
+}else{
+centerBuffers[targetKey]=b;
+}
+buildAssign();
+selectedCell=null;
+e.target.value="";
+});
+};
+reader.readAsArrayBuffer(file);
+};
+
+fileCenter.onchange=e=>{
+// Carga masiva: llena los 64 casilleros centrales de izquierda a derecha,
+// empezando por 0-1, luego 0-2 ... 0-8, después 1-1, etc.
+const cells=[];
+for(let r=0;r<ROWS;r++){
+for(let c=1;c<COLS-1;c++){
+cells.push(r+"-"+c);
+}
+}
+
+[...e.target.files].slice(0,cells.length).forEach((f,i)=>{
+let reader=new FileReader();
+reader.onload=ev=>{
+audioContext.decodeAudioData(ev.target.result,b=>{
+centerBuffers[cells[i]]=b;
+buildAssign();
+});
+};
+reader.readAsArrayBuffer(f);
+});
+e.target.value="";
+};
+
+fileSides.onchange=e=>{
+// Carga masiva: llena los 16 casilleros laterales de forma individual,
+// primero los de la izquierda y luego los de la derecha.
+const cells=[];
+for(let r=0;r<ROWS;r++) cells.push(r+"-0");
+for(let r=0;r<ROWS;r++) cells.push(r+"-"+(COLS-1));
+
+[...e.target.files].slice(0,cells.length).forEach((f,i)=>{
+let reader=new FileReader();
+reader.onload=ev=>{
+audioContext.decodeAudioData(ev.target.result,b=>{
+sideBuffers[cells[i]]=b;
+buildAssign();
+});
+};
+reader.readAsArrayBuffer(f);
+});
+e.target.value="";
+};
+
+/* AUDIO ASSIGNMENT RESET */
+function resetAudioAssignments(){
+for(let k in activeLoops){try{activeLoops[k].stop();}catch(e){}}
+activeLoops={};
+for(let k in centerSources){try{centerSources[k].stop();}catch(e){}}
+centerSources={};
+centerBuffers={};
+sideBuffers={};
+selectedCell=null;
+fileSingle.value="";
+fileCenter.value="";
+fileSides.value="";
+flashCells={};
+lastCenterCell=null;
+buildAssign();
+}
+
+/* UI */
+function openPanel(id){
+  document.querySelectorAll('.subPanel').forEach(p=>p.style.display='none');
+  mainMenu.style.display='none';
+  const panel=document.getElementById(id);
+  if(panel) panel.style.display='block';
+}
+function closePanel(id){const p=document.getElementById(id);if(p)p.style.display='none';}
+function showMainMenu(){
+  document.querySelectorAll('.subPanel').forEach(p=>p.style.display='none');
+  mainMenu.style.display='block';
+}
+function closeMain(){
+  mainMenu.style.display='none';
+  document.querySelectorAll('.subPanel').forEach(p=>p.style.display='none');
+}
+menuBtn.onclick=()=>showMainMenu();
+sensSlider.oninput=e=>sensitivity=parseInt(e.target.value);
+volSlider.oninput=e=>{if(masterGain) masterGain.gain.value=parseFloat(e.target.value);};
+const ledModeSelect=document.getElementById("ledMode");
+const ledColorSelect=document.getElementById("ledColor");
+const colorToleranceSlider=document.getElementById("colorToleranceSlider");
+const colorToleranceValue=document.getElementById("colorToleranceValue");
+const calibrationStatus=document.getElementById("calibrationStatus");
+ledModeSelect.onchange=e=>{ledMode=e.target.value;lastCenterCell=null;};
+const interactionModeSelect=document.getElementById("interactionMode");
+const bodySettings=document.getElementById("bodySettings");
+const bodySensitivitySlider=document.getElementById("bodySensitivitySlider");
+const bodyResponseSelect=document.getElementById("bodyResponse");
+interactionModeSelect.onchange=e=>{
+  interactionMode=e.target.value;
+  bodyDetectionEnabled=interactionMode==="body";
+  bodySettings.style.display=bodyDetectionEnabled?"block":"none";
+  lastCenterCell=null;
+  lastBodyCell=null;
+  bodyPrev={};
+  BodyScoringModule.reset();
+  evaluationStart.textContent="Comenzar evaluación";
+  if(bodyDetectionEnabled) loadPoseDetector();
+  else setBodyStatus("en espera","#9ff");
+};
+bodySensitivitySlider.oninput=e=>{
+  bodySensitivity=parseFloat(e.target.value);
+};
+bodyResponseSelect.onchange=e=>{
+  bodyMode=e.target.value;
+  lastBodyCell=null;
+  bodyPrev={};
+};
+ledColorSelect.onchange=e=>{ledColor=e.target.value;lastCenterCell=null;};
+colorToleranceSlider.oninput=e=>{colorTolerance=parseInt(e.target.value);colorToleranceValue.textContent=colorTolerance+"°";lastCenterCell=null;};
+function formatEvalTime(seconds){seconds=Math.max(0,Math.floor(seconds));const m=Math.floor(seconds/60).toString().padStart(2,"0");const s=(seconds%60).toString().padStart(2,"0");return m+":"+s;}
+const evaluationStart=document.getElementById("evaluationStart");
+const evaluationPause=document.getElementById("evaluationPause");
+const evaluationFinish=document.getElementById("evaluationFinish");
+const evaluationReset=document.getElementById("evaluationReset");
+const evaluationMode=document.getElementById("evaluationMode");
+const evaluationTimeBox=document.getElementById("evaluationTimeBox");
+const evaluationDuration=document.getElementById("evaluationDuration");
+function updateEvaluationControls(){
+  const running=BodyScoringModule.enabled, paused=BodyScoringModule.paused;
+  evaluationStart.textContent=running?(paused?"Continuar evaluación":"Evaluación en curso"):"Comenzar evaluación";
+  evaluationStart.disabled=running&&!paused; evaluationPause.style.display=running?"block":"none"; evaluationPause.textContent=paused?"Continuar evaluación":"Pausar evaluación";
+  evaluationFinish.style.display=running?"block":"none"; evaluationMode.disabled=running; evaluationDuration.disabled=running;
+}
+evaluationMode.onchange=()=>{evaluationTimeBox.style.display=evaluationMode.value==="timed"?"block":"none"; document.getElementById("evaluationTimer").textContent=evaluationMode.value==="timed"?formatEvalTime(parseInt(evaluationDuration.value,10)):"00:00";};
+evaluationDuration.onchange=()=>{if(!BodyScoringModule.enabled)document.getElementById("evaluationTimer").textContent=formatEvalTime(parseInt(evaluationDuration.value,10));};
+evaluationStart.onclick=()=>{if(!BodyScoringModule.enabled)runEvaluationCountdown();else if(BodyScoringModule.paused)BodyScoringModule.resume();updateEvaluationControls();};
+const categorySelector=document.getElementById("categorySelector");
+if(categorySelector)categorySelector.onchange=e=>{if(BodyScoringModule.enabled){e.target.value=bodyEvaluationCategory;return;} bodyEvaluationCategory=e.target.value; updateCategoryUI(); renderCategoryBreakdown(BodyScoringModule.compute());};
+const exportDatasetBtn=document.getElementById("exportDataset"); if(exportDatasetBtn)exportDatasetBtn.onclick=exportBodyBeatDataset;
+const clearDatasetBtn=document.getElementById("clearDataset"); if(clearDatasetBtn)clearDatasetBtn.onclick=clearBodyBeatDataset;
+
+evaluationPause.onclick=()=>{if(BodyScoringModule.paused)BodyScoringModule.resume();else BodyScoringModule.pause();};
+evaluationFinish.onclick=()=>BodyScoringModule.finish(false);
+evaluationReset.onclick=()=>BodyScoringModule.reset();
+updateEvaluationControls();
+
+/* CONTROLES RÁPIDOS */
+const sectorVolumeBar=document.getElementById("sectorVolumeBar");
+const leftSectorVolume=document.getElementById("leftSectorVolume");
+const centerSectorVolume=document.getElementById("centerSectorVolume");
+const rightSectorVolume=document.getElementById("rightSectorVolume");
+function positionSectorVolumeBar(){
+  const g=getGridRect(); if(!g||!sectorVolumeBar)return;
+  const rect=canvas.getBoundingClientRect();
+  const sx=rect.width/(canvas.width||1), sy=rect.height/(canvas.height||1);
+  const gridX=rect.left+g.x*sx, gridW=g.w*sx, gridBottom=rect.top+(g.y+g.h)*sy;
+  sectorVolumeBar.style.left=(gridX+gridW/2)+"px";
+  sectorVolumeBar.style.width=Math.min(gridW,window.innerWidth-12)+"px";
+  sectorVolumeBar.style.transform="translateX(-50%)";
+  const barH=window.innerWidth<=700?29:32;
+  sectorVolumeBar.style.height=barH+"px";
+  // Dejamos un pequeño espacio adicional antes de los botones inferiores.
+  const bottomClearance=window.innerWidth<=700?49:56;
+  sectorVolumeBar.style.top=Math.min(gridBottom+5,window.innerHeight-barH-bottomClearance)+"px";
+}
+function setSectorVolume(gainEl,valueEl,v){
+  v=Math.max(0,Math.min(1,parseFloat(v)||0));
+  if(gainEl)gainEl.gain.value=v;
+  if(valueEl)valueEl.textContent=Math.round(v*100)+"%";
+}
+leftSectorVolume.oninput=e=>setSectorVolume(leftSectorGain,document.getElementById("leftSectorValue"),e.target.value);
+centerSectorVolume.oninput=e=>setSectorVolume(centerSectorGain,document.getElementById("centerSectorValue"),e.target.value);
+rightSectorVolume.oninput=e=>setSectorVolume(rightSectorGain,document.getElementById("rightSectorValue"),e.target.value);
+window.addEventListener("resize",positionSectorVolumeBar);
+setTimeout(positionSectorVolumeBar,120);
+const quickVolumeBtn=document.getElementById("quickVolumeBtn");
+const quickVolumeWrap=document.getElementById("quickVolumeWrap");
+const quickVolume=document.getElementById("quickVolume");
+const quickPause=document.getElementById("quickPause");
+const quickStop=document.getElementById("quickStop");
+const quickMenu=document.getElementById("quickMenu");
+const quickGridToggle=document.getElementById("quickGridToggle");
+quickVolumeBtn.onclick=()=>{quickVolumeWrap.style.display=quickVolumeWrap.style.display==="flex"?"none":"flex";};
+quickVolume.oninput=e=>{const v=parseFloat(e.target.value);if(masterGain)masterGain.gain.value=v;quickVolumeBtn.textContent=v<=0.01?"🔇":"🔊";};
+quickPause.onclick=()=>setInteractionPaused(!interactionPaused);
+quickStop.onclick=()=>{stopAllSounds();setTopIndicator("Sonidos detenidos");};
+quickMenu.onclick=()=>{};
+quickGridToggle.onclick=()=>{
+  gridVisible=!gridVisible;
+  quickGridToggle.textContent=gridVisible?"Act/des Grilla":"Mostrar Grilla";
+  quickGridToggle.title=gridVisible?"Desactivar grilla":"Activar grilla";
+  if(typeof setTopIndicator==="function") setTopIndicator(gridVisible?"Grilla activada":"Grilla desactivada");
+
+  // Redibujado inmediato: el canvas se limpia por completo y se vuelve a
+  // pintar únicamente la cámara; drawGrid() se ejecuta solo si gridVisible.
+  if(typeof renderFrameNow==="function") renderFrameNow();
+};
+
+centerDurationSlider.oninput=e=>{
+centerDuration=parseFloat(e.target.value);
+centerDurationValue.textContent=(centerDuration%1===0?centerDuration.toFixed(0):centerDuration.toFixed(1))+" s";
+};
+
+function resetLoops(){
+for(let k in activeLoops){try{activeLoops[k].stop();}catch(e){}}
+activeLoops={};
+}
+
+function toggleMirror(){mirror=!mirror;}
+</script>
+</body>
+</html>
