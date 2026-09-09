@@ -128,7 +128,7 @@ function resize(){const w=video.videoWidth||innerWidth,h=video.videoHeight||inne
 function draw(){resize();ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#050b18';ctx.fillRect(0,0,canvas.width,canvas.height);const g=getCameraRect();if(video.readyState>=2&&video.videoWidth){const s=Math.min(g.w/video.videoWidth,g.h/video.videoHeight),dw=video.videoWidth*s,dh=video.videoHeight*s;const ox=g.x+(g.w-dw)/2,oy=g.y+(g.h-dh)/2;ctx.save();ctx.beginPath();ctx.rect(g.x,g.y,g.w,g.h);ctx.clip();if(mirror){ctx.translate(ox+dw,oy);ctx.scale(-1,1);ctx.drawImage(video,0,0,dw,dh)}else ctx.drawImage(video,ox,oy,dw,dh);ctx.restore()}requestAnimationFrame(draw)}
 function getCameraRect(){if(innerWidth<700){const margin=8,top=55,bottom=52;return{x:margin,y:top,w:Math.max(100,canvas.width-margin*2),h:Math.max(100,canvas.height-top-bottom)}}const side=24,top=64,bottom=72,gap=10;const availW=Math.max(320,canvas.width-side*2);const availH=Math.max(180,canvas.height-top-bottom-gap);const maxW=Math.min(820,availW);const w=Math.min(maxW,Math.floor(availH*16/9));const h=Math.floor(w*9/16);const x=Math.round((canvas.width-w)/2);const y=Math.max(top,Math.round(top+(availH-h)/2));return{x,y,w,h}}
 function getRecordingMime(){const options=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];return options.find(x=>window.MediaRecorder&&MediaRecorder.isTypeSupported(x))||''}
-function startVideoRecording(){try{if(!window.MediaRecorder||!canvas.captureStream){setTop('La grabación de video no está disponible en este navegador');return false}recordedChunks=[];recordedBlob=null;if(recordedUrl){URL.revokeObjectURL(recordedUrl);recordedUrl=null}const cs=canvas.captureStream(30);let recStream=cs;if(micEnabled&&audioDestination){const mixed=new MediaStream([...cs.getVideoTracks(),...audioDestination.stream.getAudioTracks()]);recStream=mixed}recordingMime=getRecordingMime();mediaRecorder=recordingMime?new MediaRecorder(recStream,{mimeType:recordingMime}):new MediaRecorder(recStream);mediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size)recordedChunks.push(e.data)};mediaRecorder.onstop=()=>{recordedBlob=new Blob(recordedChunks,{type:mediaRecorder.mimeType||recordingMime||'video/webm'});recordedUrl=URL.createObjectURL(recordedBlob)};mediaRecorder.start(1000);document.getElementById('recordingStatus').textContent=micEnabled?'● Grabando evaluación con audio':'● Grabando tu evaluación';return true}catch(e){console.error(e);setTop('No se pudo iniciar la grabación de video');return false}}
+function startVideoRecording(){try{if(!window.MediaRecorder||!canvas.captureStream){setTop('La grabación de video no está disponible en este navegador');return false}recordedChunks=[];recordedBlob=null;if(recordedUrl){URL.revokeObjectURL(recordedUrl);recordedUrl=null}const cs=canvas.captureStream(30);let recStream=cs;if(micEnabled&&audioDestination){const mixed=new MediaStream([...cs.getVideoTracks(),...audioDestination.stream.getAudioTracks()]);recStream=mixed}recordingMime=getRecordingMime();mediaRecorder=recordingMime?new MediaRecorder(recStream,{mimeType:recordingMime,videoBitsPerSecond:2500000}):new MediaRecorder(recStream,{videoBitsPerSecond:2500000});mediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size)recordedChunks.push(e.data)};mediaRecorder.onstop=()=>{recordedBlob=new Blob(recordedChunks,{type:mediaRecorder.mimeType||recordingMime||'video/webm'});recordedUrl=URL.createObjectURL(recordedBlob)};mediaRecorder.start(1000);document.getElementById('recordingStatus').textContent=micEnabled?'● Grabando evaluación con audio':'● Grabando tu evaluación';return true}catch(e){console.error(e);setTop('No se pudo iniciar la grabación de video');return false}}
 function stopVideoRecording(){return new Promise(resolve=>{if(!mediaRecorder||mediaRecorder.state==='inactive'){resolve();return}let done=false;const finish=()=>{if(done)return;done=true;resolve()};mediaRecorder.addEventListener('stop',finish,{once:true});try{mediaRecorder.stop()}catch(e){console.warn('No se pudo detener MediaRecorder:',e);finish()}setTimeout(finish,3500)})}
 function prepareRecordedVideo(){const v=document.getElementById('recordedVideo');if(recordedUrl&&v){v.src=recordedUrl;document.getElementById('recordingStatus').textContent='Video de tu evaluación listo.'}else{document.getElementById('recordingStatus').textContent='No se pudo generar el video de esta evaluación.'}}
 function getShareText(){return userName?`${userName} obtuvo ${Math.round(compute()?.score||0)} puntos en Expression. ¡Prueba tu expresión artística!`:`Obtuve ${Math.round(compute()?.score||0)} puntos en Expression. ¡Prueba tu expresión artística!`}
@@ -156,30 +156,46 @@ function platformShare(platform){
 }
 async function nativeShare(target){
   shareTarget=target||shareTarget;
-  const files=[];
+  const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||((navigator.maxTouchPoints||0)>1&&innerWidth<1000);
+  const score=Math.round(compute()?.score||0);
+  let file=null;
   if(shareTarget==='image' && resultImageBlob){
-    files.push(new File([resultImageBlob],`Expression_resultado_${Math.round(compute()?.score||0)}.png`,{type:'image/png'}));
+    file=new File([resultImageBlob],`Expression_resultado_${score}.png`,{type:'image/png'});
   }
   if(shareTarget==='video' && recordedBlob){
     const ext=recordedBlob.type.includes('mp4')?'mp4':'webm';
-    files.push(new File([recordedBlob],`Expression_evaluacion_${Math.round(compute()?.score||0)}.${ext}`,{type:recordedBlob.type||'video/webm'}));
+    file=new File([recordedBlob],`Expression_evaluacion_${score}.${ext}`,{type:recordedBlob.type||'video/webm'});
   }
-  if(!files.length){setTop('El archivo todavía no está disponible.');return false}
+  if(!file){setTop('El archivo todavía no está disponible.');return false}
+
+  // En PC no intentamos abrir un panel de compartir que puede quedar esperando.
+  // Allí la acción segura es descargar el archivo para compartirlo desde el sistema.
+  if(!isMobile){
+    if(shareTarget==='image')downloadResultImage();
+    else downloadRecordedVideo();
+    setTop(`Archivo ${shareTarget==='image'?'de imagen':'de video'} descargado. Puedes compartirlo desde tu PC.`);
+    return true;
+  }
+
   if(!navigator.share){
-    setTop('Este navegador no permite compartir archivos directamente. Prueba desde un dispositivo compatible, como Android.');
+    if(shareTarget==='image')downloadResultImage();
+    else downloadRecordedVideo();
+    setTop('Tu navegador no permite compartir archivos directamente. Se descargó el archivo para que puedas compartirlo.');
     return false;
   }
+
   try{
-    if(navigator.canShare && !navigator.canShare({files})){
-      setTop('Este dispositivo no permite compartir este archivo directamente.');
-      return false;
-    }
-    await navigator.share({title:'Mi resultado en Expression',text:getShareText(),files});
+    if(navigator.canShare && !navigator.canShare({files:[file]}))throw new Error('canShare=false');
+    await navigator.share({title:'Mi resultado en Expression',text:getShareText(),files:[file]});
     return true;
   }catch(e){
-    if(e.name==='AbortError')return false;
+    if(e?.name==='AbortError')return false;
     console.warn('Compartir archivo no disponible:',e);
-    setTop('No se pudo abrir el menú de compartir archivos en este dispositivo.');
+    // Algunos móviles aceptan imágenes pero rechazan videos grandes o ciertos MIME.
+    // En ese caso no dejamos al usuario sin salida: descargamos el archivo.
+    if(shareTarget==='image')downloadResultImage();
+    else downloadRecordedVideo();
+    setTop(`No se pudo abrir el menú para compartir el ${shareTarget==='image'?'resultado':'video'}. Se descargó el archivo para compartirlo manualmente.`);
     return false;
   }
 }
