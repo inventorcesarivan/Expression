@@ -1,34 +1,34 @@
-# BodyBeat
+# Expression v1
 
-Versión estable preparada para publicación como sitio web estático.
+Primera base independiente para evaluación de expresiones artísticas mediante cámara.
 
-## Estructura
+## Base reutilizada
 
-- `index.html` — aplicación BodyBeat.
-- `assets/bases-laterales/` — 16 bases laterales cargadas por defecto.
-- `netlify.toml` — configuración mínima para publicación estática.
+La aplicación conserva la parte probada de BodyBeat relacionada con:
+- activación explícita de la cámara;
+- renderizado de cámara en tiempo real;
+- funcionamiento en pantalla horizontal en móviles;
+- detección corporal mediante MediaPipe Pose;
+- análisis de landmarks y movimiento;
+- sistema de puntuación por características del movimiento.
+
+## Qué se eliminó de BodyBeat
+
+Esta versión ya no depende de la grilla, LEDs, pads, bases musicales, loops ni creación musical.
+
+## Categorías iniciales
+
+- Baile / Danza
+- Canto — expresión visual
+- Actuación
+- Farmear Aura / Presencia
+- Expresión corporal
+- Expresión general
+
+La categoría de canto, en esta primera etapa, evalúa solamente lo observable por cámara. El análisis de voz/afinación queda preparado como futura capa independiente.
 
 ## Publicación
 
-### GitHub
-Subir todo el contenido de esta carpeta al repositorio, manteniendo la estructura de `assets`.
+Es un sitio estático: `index.html` está en la raíz y puede publicarse directamente en GitHub + Netlify.
 
-### Netlify
-Conectar el repositorio de GitHub con Netlify. No se necesita build command: `index.html` está en la raíz.
-
-## Audio por defecto
-
-Los 16 audios laterales se cargan cuando el usuario activa BodyBeat:
-
-- `1` a `8` → columna lateral izquierda, de arriba hacia abajo.
-- `9` a `16` → columna lateral derecha, de arriba hacia abajo.
-
-Los sonidos del centro no fueron modificados.
-
-## Cámara en móviles
-
-En teléfonos, BodyBeat requiere orientación horizontal. Si el dispositivo está en vertical, aparece una pantalla indicando al usuario que lo gire. La aplicación no solicita la cámara automáticamente mientras está en esa pantalla; la solicitud de cámara/sonido continúa dependiendo de la acción explícita del usuario.
-
-## Nota
-
-La cámara necesita un contexto seguro para funcionar en producción (HTTPS, como el que proporciona Netlify).
+La cámara requiere HTTPS o un contexto seguro.
