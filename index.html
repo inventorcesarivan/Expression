@@ -169,88 +169,59 @@ function resize(){const w=video.videoWidth||innerWidth,h=video.videoHeight||inne
 function draw(){resize();ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#050b18';ctx.fillRect(0,0,canvas.width,canvas.height);const g=getCameraRect();if(video.readyState>=2&&video.videoWidth){const s=Math.min(g.w/video.videoWidth,g.h/video.videoHeight),dw=video.videoWidth*s,dh=video.videoHeight*s;const ox=g.x+(g.w-dw)/2,oy=g.y+(g.h-dh)/2;ctx.save();ctx.beginPath();ctx.rect(g.x,g.y,g.w,g.h);ctx.clip();if(mirror){ctx.translate(ox+dw,oy);ctx.scale(-1,1);ctx.drawImage(video,0,0,dw,dh)}else ctx.drawImage(video,ox,oy,dw,dh);ctx.restore()}requestAnimationFrame(draw)}
 function getCameraRect(){if(innerWidth<700){const margin=8,top=55,bottom=52;return{x:margin,y:top,w:Math.max(100,canvas.width-margin*2),h:Math.max(100,canvas.height-top-bottom)}}const side=24,top=64,bottom=72,gap=10;const availW=Math.max(320,canvas.width-side*2);const availH=Math.max(180,canvas.height-top-bottom-gap);const maxW=Math.min(820,availW);const w=Math.min(maxW,Math.floor(availH*16/9));const h=Math.floor(w*9/16);const x=Math.round((canvas.width-w)/2);const y=Math.max(top,Math.round(top+(availH-h)/2));return{x,y,w,h}}
 function getRecordingMime(){const options=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];return options.find(x=>window.MediaRecorder&&MediaRecorder.isTypeSupported(x))||''}
-async function ensureAudioForMusicSync(){
+function ensureAudioForMusicSync(){
   if(!selectedMusic.url)return false;
   try{
     if(!recordAudioContext)recordAudioContext=new (window.AudioContext||window.webkitAudioContext)();
-    if(recordAudioContext.state==='suspended')await recordAudioContext.resume();
+    if(recordAudioContext.state==='suspended')recordAudioContext.resume().catch(()=>{});
     if(!recordAudioDestination)recordAudioDestination=recordAudioContext.createMediaStreamDestination();
     if(!recordMusicSource){
       recordMusicPlayer.loop=true;
       recordMusicPlayer.preload='auto';
       recordMusicSource=recordAudioContext.createMediaElementSource(recordMusicPlayer);
       recordMusicGain=recordAudioContext.createGain();
+      recordMusicGain.gain.value=0;
       recordMusicSource.connect(recordMusicGain);
       recordMusicGain.connect(recordAudioDestination);
     }
-    recordMusicGain.gain.value=Math.max(0,Math.min(1,volumeLevel));
     return true;
   }catch(e){console.warn('No se pudo preparar el audio para la grabación:',e);return false}
 }
 function resetMusicPlayer(item){try{musicPlayer.pause();musicPlayer.currentTime=0;musicPlayer.onended=null;musicPlayer.onerror=null;const src=item&&item.url?new URL(item.url,document.baseURI).href:'';if(musicPlayer.src!==src){musicPlayer.src=src;musicPlayer.load()}musicPlayer.loop=true;musicPlayer.volume=volumeLevel;return !!src}catch(e){console.warn('No se pudo preparar el reproductor:',e);return false}}
-async function prepareMusicForUserGesture(){
+function prepareMusicForUserGesture(){
   if(!selectedMusic.url)return true;
   try{
     resetMusicPlayer(selectedMusic);
-    await ensureAudioForMusicSync();
+    ensureAudioForMusicSync();
     const src=new URL(selectedMusic.url,document.baseURI).href;
     if(recordMusicPlayer.src!==src){recordMusicPlayer.src=src;recordMusicPlayer.load()}
     recordMusicPlayer.loop=true;
+    recordMusicPlayer.volume=1;
     recordMusicPlayer.currentTime=0;
-    if(recordAudioContext?.state==='suspended')await recordAudioContext.resume();
-    // Arranque temprano del reproductor destinado a la grabación.
     const p=recordMusicPlayer.play();
-    if(p)await p.catch(()=>{});
+    if(p)p.catch(()=>{});
     return true;
   }catch(e){console.warn('No se pudo preparar la música para la grabación:',e);return false}
 }
 function setMusicAudible(){if(!selectedMusic.url)return;try{musicPlayer.volume=volumeLevel;const p=musicPlayer.play();if(p)p.catch(()=>{})}catch(e){console.warn('No se pudo reproducir la música:',e)}}
 function startBackgroundMusic(){if(!selectedMusic.url)return false;try{if(!musicPlayer.src||!musicPlayer.src.includes(selectedMusic.url))resetMusicPlayer(selectedMusic);musicPlayer.volume=volumeLevel;const p=musicPlayer.play();if(p)p.catch(()=>{});return true}catch(e){console.warn('No se pudo iniciar la música:',e);return false}}
-async function startRecordingMusic(){
-  if(!selectedMusic.url)return false;
-  try{
-    const ok=await ensureAudioForMusicSync();
-    if(!ok)return false;
-    const src=new URL(selectedMusic.url,document.baseURI).href;
-    if(recordMusicPlayer.src!==src){recordMusicPlayer.src=src;recordMusicPlayer.load()}
-    recordMusicPlayer.loop=true;
-    recordMusicPlayer.currentTime=0;
-    recordMusicGain.gain.value=Math.max(0,Math.min(1,volumeLevel));
-    if(recordAudioContext?.state==='suspended')await recordAudioContext.resume();
-    // Esperar a que el elemento tenga datos antes de iniciar la captura.
-    if(recordMusicPlayer.readyState<2){
-      await new Promise(resolve=>{
-        let done=false; const finish=()=>{if(done)return;done=true;resolve()};
-        recordMusicPlayer.addEventListener('canplay',finish,{once:true});
-        recordMusicPlayer.addEventListener('loadeddata',finish,{once:true});
-        setTimeout(finish,1800);
-      });
-    }
-    const p=recordMusicPlayer.play();
-    if(p)await p.catch(()=>{});
-    return !recordMusicPlayer.paused;
-  }catch(e){console.warn('No se pudo iniciar la música de la grabación:',e);return false}
-}
+function startRecordingMusic(){if(!selectedMusic.url)return false;try{ensureAudioForMusicSync();if(!recordMusicPlayer.src||!recordMusicPlayer.src.includes(selectedMusic.url)){const src=new URL(selectedMusic.url,document.baseURI).href;recordMusicPlayer.src=src;recordMusicPlayer.load()}recordMusicPlayer.loop=true;recordMusicPlayer.currentTime=0;recordMusicGain.gain.value=volumeLevel;const p=recordMusicPlayer.play();if(p)p.catch(()=>{});return true}catch(e){console.warn('No se pudo iniciar la música de la grabación:',e);return false}}
 function stopBackgroundMusic(reset=true){try{musicPlayer.pause();musicPlayer.volume=volumeLevel;if(reset)musicPlayer.currentTime=0}catch(e){}try{recordMusicPlayer.pause();if(reset)recordMusicPlayer.currentTime=0;if(recordMusicGain)recordMusicGain.gain.value=0}catch(e){}}
-async function startVideoRecording(){
-  try{
-    if(!window.MediaRecorder||!canvas.captureStream){setTop('La grabación de video no está disponible en este navegador');return false}
-    recordedChunks=[];recordedBlob=null;
-    if(recordedUrl){URL.revokeObjectURL(recordedUrl);recordedUrl=null}
-    const cs=canvas.captureStream(30);
-    let recStream=new MediaStream(cs.getVideoTracks());
-    if(selectedMusic.url){
-      const ok=await ensureAudioForMusicSync();
-      const tracks=recordAudioDestination?.stream?.getAudioTracks?.()||[];
-      if(ok&&tracks.length)tracks.forEach(t=>recStream.addTrack(t));
-    }
-    recordingMime=getRecordingMime();
-    mediaRecorder=recordingMime?new MediaRecorder(recStream,{mimeType:recordingMime,videoBitsPerSecond:2500000,audioBitsPerSecond:128000}):new MediaRecorder(recStream,{videoBitsPerSecond:2500000,audioBitsPerSecond:128000});
-    mediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size)recordedChunks.push(e.data)};
-    mediaRecorder.onstop=()=>{recordedBlob=new Blob(recordedChunks,{type:mediaRecorder.mimeType||recordingMime||'video/webm'});recordedUrl=URL.createObjectURL(recordedBlob)};
-    mediaRecorder.start(250);
-    return true;
-  }catch(e){console.error(e);setTop('No se pudo iniciar la grabación de video');return false}
+function startVideoRecording(){try{if(!window.MediaRecorder||!canvas.captureStream){setTop('La grabación de video no está disponible en este navegador');return false}recordedChunks=[];recordedBlob=null;if(recordedUrl){URL.revokeObjectURL(recordedUrl);recordedUrl=null}const cs=canvas.captureStream(30);let recStream=cs;if(selectedMusic.url){ensureAudioForMusicSync();if(recordAudioDestination?.stream?.getAudioTracks?.().length){recordAudioDestination.stream.getAudioTracks().forEach(t=>recStream.addTrack(t))}}recordingMime=getRecordingMime();mediaRecorder=recordingMime?new MediaRecorder(recStream,{mimeType:recordingMime,videoBitsPerSecond:2500000}):new MediaRecorder(recStream,{videoBitsPerSecond:2500000});mediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size)recordedChunks.push(e.data)};mediaRecorder.onstop=()=>{recordedBlob=new Blob(recordedChunks,{type:mediaRecorder.mimeType||recordingMime||'video/webm'});recordedUrl=URL.createObjectURL(recordedBlob)};mediaRecorder.start(1000);return true}catch(e){console.error(e);setTop('No se pudo iniciar la grabación de video');return false}}
+function stopVideoRecording(){return new Promise(resolve=>{if(!mediaRecorder||mediaRecorder.state==='inactive'){resolve();return}let done=false;const finish=()=>{if(done)return;done=true;resolve()};mediaRecorder.addEventListener('stop',finish,{once:true});try{mediaRecorder.stop()}catch(e){console.warn('No se pudo detener MediaRecorder:',e);finish()}setTimeout(finish,3500)})}
+function prepareRecordedVideo(){const v=document.getElementById('recordedVideo');if(recordedUrl&&v){v.src=recordedUrl}else if(v){v.removeAttribute('src');v.load()}}
+function getAppUrl(){return location.protocol==='file:'?'':(location.origin+location.pathname)}
+function getShareText(){const score=Math.round(compute()?.score||0),cat=(profiles[category]?.name||'expresión').toLowerCase(),url=getAppUrl();const base=userName?`${userName} obtuvo ${score} puntos en su evaluación de ${cat}. ¡Anímate a evaluar tus capacidades!`:`Obtuve ${score} puntos en mi evaluación de ${cat}. ¡Anímate a evaluar tus capacidades!`;return url?`${base} ${url}`:base}
+function openResultPanel(kind){
+  closeResultPanels();
+  if(kind==='share'){
+    document.getElementById('sharePanel').style.display='block';
+    document.getElementById('shareImagePreview').style.display=resultImageUrl?'block':'none';
+  }else if(kind==='video'){
+    if(!recordedUrl){setTop('El video todavía no está disponible.');return}
+    document.getElementById('videoPanel').style.display='block';
+    prepareRecordedVideo();
+  }
 }
 function closeResultPanels(){document.getElementById('sharePanel').style.display='none';document.getElementById('videoPanel').style.display='none';}
 function closeSharePanel(){closeResultPanels()}
@@ -407,8 +378,8 @@ function resetScore(){if(resultImageUrl){URL.revokeObjectURL(resultImageUrl);res
 function currentElapsed(){if(!evalRunning)return elapsedBeforePause;return elapsedBeforePause+(performance.now()-startTime)/1000}
 function startEvaluationTimer(){if(evalTimerId)clearInterval(evalTimerId);if(duration<=0)return;evalTimerId=setInterval(()=>{if(!evalRunning||evalPaused)return;const elapsed=currentElapsed();document.getElementById('topTimer').textContent=formatTime(Math.min(elapsed,duration));if(elapsed>=duration){clearInterval(evalTimerId);evalTimerId=null;finishEvaluation(true)}},200)}
 async function countdownStart(){if(countdown||evalRunning)return;userName=(document.getElementById('userName').value||'').trim();if(!userName){document.getElementById('userName').focus();setTop('Antes de comenzar, escribe tu nombre.');return}const musicGestureReady=prepareMusicForUserGesture();await initCamera();if(!cameraReady){setTop('Necesitamos acceso a la cámara para evaluar');return}activation.style.display='none';if(document.getElementById('micEnabled').checked){const ok=await setMicrophoneEnabled(true);if(!ok)return}else setMicrophoneEnabled(false);loadPose();setTop('Preparando el detector corporal…');const poseOk=await waitForPoseReady(8000);if(!poseOk){setTop('No se pudo preparar el detector corporal. Revisa tu conexión e inténtalo nuevamente.');return}countdown=true;closePanels();const box=document.getElementById('countdown'),title=document.getElementById('countdownTitle'),text=document.getElementById('countdownText');box.style.display='flex';title.textContent='Prepárate, ahora evaluaremos tu desempeño.';text.textContent='';await new Promise(r=>setTimeout(r,2400));title.textContent='Evaluando en';for(const n of [3,2,1]){text.textContent=n;await new Promise(r=>setTimeout(r,700))}title.textContent='¡Comenzamos!';text.textContent='';await new Promise(r=>setTimeout(r,450));box.style.display='none';countdown=false;startEvaluation()}
-async function startEvaluation(){if(!poseReady){setTop('El detector corporal todavía no está listo.');return}resetScore();duration=+document.getElementById('duration').value;await startVideoRecording();evalRunning=true;if(selectedMusic.url){startBackgroundMusic();await startRecordingMusic()}evalPaused=false;startTime=performance.now();elapsedBeforePause=0;setTop('Evaluando: '+profiles[category].name);document.getElementById('start').textContent='Evaluación en curso';document.getElementById('start').disabled=true;document.getElementById('pause').style.display='block';document.getElementById('finish').style.display='block';document.getElementById('topEvalControls').style.display='flex';document.getElementById('pauseTopBtn').textContent='⏸';document.getElementById('topTimer').style.display='inline';document.getElementById('topTimer').textContent='00:00';updateLiveMusicControls();startEvaluationTimer();if(poseReady===false)loadPose()}
-function pauseEvaluation(){if(!evalRunning)return;if(!evalPaused){elapsedBeforePause=currentElapsed();evalPaused=true;if(mediaRecorder&&mediaRecorder.state==='recording'&&mediaRecorder.pause)mediaRecorder.pause();if(selectedMusic.url){musicPlayer.pause();recordMusicPlayer.pause();if(recordMusicGain)recordMusicGain.gain.value=0}setTop('Evaluación pausada')}else{startTime=performance.now();evalPaused=false;if(mediaRecorder&&mediaRecorder.state==='paused'&&mediaRecorder.resume)mediaRecorder.resume();if(selectedMusic.url){startBackgroundMusic();if(recordMusicGain)recordMusicGain.gain.value=volumeLevel;if(recordAudioContext?.state==='suspended')recordAudioContext.resume().catch(()=>{});const p=recordMusicPlayer.play();if(p)p.catch(()=>{})}setTop('Evaluando: '+profiles[category].name)}document.getElementById('pause').textContent=evalPaused?'Continuar evaluación':'Pausar evaluación';document.getElementById('pauseTopBtn').textContent=evalPaused?'▶':'⏸';updateLiveMusicControls();}
+async function startEvaluation(){if(!poseReady){setTop('El detector corporal todavía no está listo.');return}resetScore();duration=+document.getElementById('duration').value;startVideoRecording();evalRunning=true;if(selectedMusic.url){startBackgroundMusic();startRecordingMusic()}evalPaused=false;startTime=performance.now();elapsedBeforePause=0;setTop('Evaluando: '+profiles[category].name);document.getElementById('start').textContent='Evaluación en curso';document.getElementById('start').disabled=true;document.getElementById('pause').style.display='block';document.getElementById('finish').style.display='block';document.getElementById('topEvalControls').style.display='flex';document.getElementById('pauseTopBtn').textContent='⏸';document.getElementById('topTimer').style.display='inline';document.getElementById('topTimer').textContent='00:00';updateLiveMusicControls();startEvaluationTimer();if(poseReady===false)loadPose()}
+function pauseEvaluation(){if(!evalRunning)return;if(!evalPaused){elapsedBeforePause=currentElapsed();evalPaused=true;if(mediaRecorder&&mediaRecorder.state==='recording'&&mediaRecorder.pause)mediaRecorder.pause();if(selectedMusic.url){musicPlayer.pause();recordMusicPlayer.pause();if(recordMusicGain)recordMusicGain.gain.value=0}setTop('Evaluación pausada')}else{startTime=performance.now();evalPaused=false;if(mediaRecorder&&mediaRecorder.state==='paused'&&mediaRecorder.resume)mediaRecorder.resume();if(selectedMusic.url){startBackgroundMusic();if(recordMusicGain)recordMusicGain.gain.value=volumeLevel;const p=recordMusicPlayer.play();if(p)p.catch(()=>{})}setTop('Evaluando: '+profiles[category].name)}document.getElementById('pause').textContent=evalPaused?'Continuar evaluación':'Pausar evaluación';document.getElementById('pauseTopBtn').textContent=evalPaused?'▶':'⏸';updateLiveMusicControls();}
 async function finishEvaluation(auto=false){if(!evalRunning)return;if(!auto){openStopConfirm();return}if(evalTimerId){clearInterval(evalTimerId);evalTimerId=null}let r=compute();if(!r){await new Promise(resolve=>setTimeout(resolve,300));r=compute()}evalRunning=false;evalPaused=false;document.getElementById('start').disabled=false;document.getElementById('start').textContent='Comenzar evaluación';document.getElementById('pause').style.display='none';document.getElementById('finish').style.display='none';document.getElementById('topEvalControls').style.display='none';updateLiveMusicControls();if(r){await stopVideoRecording();stopBackgroundMusic();await showFinal(r,auto);if(micEnabled)await setMicrophoneEnabled(false)}else{if(mediaRecorder&&mediaRecorder.state!=='inactive'){await stopVideoRecording()}stopBackgroundMusic();if(micEnabled)await setMicrophoneEnabled(false);setTop('La evaluación terminó, pero no se detectó movimiento corporal. No se generó un resultado.')} }
 function openStopConfirm(){document.getElementById('stopConfirm').style.display='flex'}
 function closeStopConfirm(){document.getElementById('stopConfirm').style.display='none'}
