@@ -1,66 +1,46 @@
-# Expression v1
+# Expression — Neon v3: evaluación inteligente + canto por voz
 
-Primera base independiente para evaluación de expresiones artísticas mediante cámara.
+Esta versión parte de la base estable con interfaz Neon v2 y agrega un módulo experimental de análisis vocal para Canto, además de una calibración de puntuación para reducir la concentración artificial de resultados alrededor de 60–70.
 
-## Base reutilizada
+## Cambios principales
 
-La aplicación conserva la parte probada de BodyBeat relacionada con:
-- activación explícita de la cámara;
-- renderizado de cámara en tiempo real;
-- funcionamiento en pantalla horizontal en móviles;
-- detección corporal mediante MediaPipe Pose;
-- análisis de landmarks y movimiento;
-- sistema de puntuación por características del movimiento.
+### 1. Puntuación corporal mejor calibrada
+Se conserva el análisis corporal existente (Actividad, Coordinación, Fluidez, Estabilidad y Variedad), pero la salida final utiliza una calibración no lineal para aprovechar mejor el rango 0–100. Esto busca que una actuación claramente débil, media o sobresaliente no termine agrupada innecesariamente en un mismo intervalo.
 
-## Qué se eliminó de BodyBeat
+La calibración no pretende decir que el sistema ya sea una IA entrenada: sigue siendo un modelo matemático basado en características extraídas de MediaPipe Pose.
 
-Esta versión incorpora una primera capa de música de fondo para las evaluaciones. Las bases musicales por defecto se conectan desde `assets/music/`; también se permite cargar un archivo de audio propio desde el dispositivo.
+### 2. Canto — voz + expresión
+La disciplina Canto ahora combina:
+- Análisis corporal.
+- Detección de voz durante la evaluación.
+- Afinación aproximada respecto del temperamento de 12 semitonos.
+- Estabilidad de la altura vocal.
+- Dinámica de intensidad.
+- Presencia/actividad vocal.
+- Rango tonal aproximado.
 
-## Categorías iniciales
+Para Canto se solicita activar el micrófono. Si no está activo, la evaluación vocal no se ejecuta.
 
-- Baile / Danza
-- Canto — expresión visual
-- Actuación
-- Farmear Aura / Presencia
-- Expresión corporal
-- Expresión general
+### 3. Panel de análisis vocal
+Durante Canto aparece un panel con:
+- Afinación
+- Estabilidad
+- Dinámica
+- Presencia vocal
 
-La categoría de canto, en esta primera etapa, evalúa solamente lo observable por cámara. El análisis de voz/afinación queda preparado como futura capa independiente.
+El resultado final combina 55% del desempeño corporal y 45% del módulo vocal cuando el micrófono está activo.
 
-## Publicación
+## Sobre incorporar una IA real
+La arquitectura actual queda preparada conceptualmente para una segunda etapa de IA, pero esta versión no contiene todavía un modelo de aprendizaje automático entrenado.
 
-Es un sitio estático: `index.html` está en la raíz y puede publicarse directamente en GitHub + Netlify.
+El siguiente salto de precisión debería hacerse con un modelo híbrido:
+1. MediaPipe Pose para obtener la secuencia corporal.
+2. Extracción de características temporales normalizadas.
+3. Un modelo pequeño entrenado con ejemplos reales de actuaciones.
+4. Análisis vocal separado para Canto.
+5. Una capa final de calibración que convierta las predicciones en una puntuación 0–100.
 
-La cámara requiere HTTPS o un contexto seguro.
+Para entrenar esa IA de forma seria sería necesario construir un conjunto de ejemplos etiquetados por habilidad y nivel. Eso permitiría que Expression aprenda qué patrones distinguen, por ejemplo, una actuación excelente de una simplemente activa.
 
-## Música de fondo
-
-Desde el panel de evaluación se puede abrir **Evaluar con música de fondo**. El usuario puede seleccionar una base, escucharla como vista previa y confirmar con **Guardar selección**. La base confirmada queda preparada para comenzar automáticamente al iniciar la evaluación.
-
-Se incluyen 20 estilos en el selector:
-- Break dance
-- Cumbia
-- Cuarteto
-- Cinemático
-- Electrónica
-- Épica
-- Funk
-- Hip hop
-- Jazz
-- Latino
-- Merengue
-- Pop
-- Rap
-- Reggaetón
-- Reggae
-- Rock
-- Salsa
-- Soft
-- Tango
-- Trap
-
-Se agregaron **Electrónica, Funk y Reggae** como tres estilos adicionales.
-
-Los archivos por defecto todavía no están incluidos porque serán enviados posteriormente para conectarlos a sus respectivos estilos. La aplicación ya tiene preparado el mapa de nombres y rutas en `index.html`.
-
-También existe la opción **Cargar mi propia música**, que permite seleccionar un archivo de audio compatible desde el dispositivo, escucharlo y guardarlo como base para la evaluación.
+## Compatibilidad
+Se mantiene la arquitectura estática del proyecto: cámara y MediaPipe siguen dependiendo de sus recursos CDN, mientras que el análisis vocal se realiza localmente mediante Web Audio API.
