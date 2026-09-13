@@ -188,7 +188,7 @@ body{min-height:100dvh}video{display:none}canvas{position:fixed;inset:0;width:10
 <h2>🎵 Música de fondo</h2>
 <p class="panelSubtitle">Elige una base para acompañar tu evaluación. Al seleccionar una opción, podrás escucharla como vista previa.</p>
 <div class="musicOptions"><label style="display:block;font-size:12px;color:#8feeff;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Base musical</label><select id="musicSelect">
-<option value="break-dance">1. Break dance</option><option value="cumbia">2. Cumbia</option><option value="cuarteto">3. Cuarteto</option><option value="cinematico">4. Cinemático</option><option value="electronica">5. Electrónica</option><option value="epica">6. Épica</option><option value="funk">7. Funk</option><option value="hip-hop">8. Hip hop</option><option value="jazz">9. Jazz</option><option value="latino">10. Latino</option><option value="merengue">11. Merengue</option><option value="pop">12. Pop</option><option value="rap">13. Rap</option><option value="reggaeton">14. Reggaetón</option><option value="reggae">15. Reggae</option><option value="rock">16. Rock</option><option value="salsa">17. Salsa</option><option value="soft">18. Soft</option><option value="tango">19. Tango</option><option value="trap">20. Trap</option>
+<option value="none">🚫 Sin música de fondo</option><option value="break-dance">1. Break dance</option><option value="cumbia">2. Cumbia</option><option value="cuarteto">3. Cuarteto</option><option value="cinematico">4. Cinemático</option><option value="electronica">5. Electrónica</option><option value="epica">6. Épica</option><option value="funk">7. Funk</option><option value="hip-hop">8. Hip hop</option><option value="jazz">9. Jazz</option><option value="latino">10. Latino</option><option value="merengue">11. Merengue</option><option value="pop">12. Pop</option><option value="rap">13. Rap</option><option value="reggaeton">14. Reggaetón</option><option value="reggae">15. Reggae</option><option value="rock">16. Rock</option><option value="salsa">17. Salsa</option><option value="soft">18. Soft</option><option value="tango">19. Tango</option><option value="trap">20. Trap</option>
 </select></div>
 <div class="musicFileWrap" id="musicFileWrap"><label style="display:block;font-size:12px;color:#8feeff;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Tu archivo de audio</label><input id="musicFile" type="file" accept="audio/*"></div>
 <div class="musicPreviewStatus" id="musicPreviewStatus">No hay una base seleccionada.</div>
@@ -239,28 +239,28 @@ const activation=document.getElementById('activation');
 let stream=null,initPromise=null,cameraReady=false,mirror=false,menuOpen=false,paused=false,countdown=false;
 let micStream=null,audioContext=null,audioSource=null,audioGain=null,audioDestination=null,micAnalyser=null,spectrumAnalyser=null,micEnabled=false,volumeLevel=.8,micNoiseFloorRms=.004;
 let musicAudio=new Audio(),musicSource=null,musicGain=null,musicPlayer=new Audio(),recordMusicPlayer=new Audio(),recordAudioContext=null,recordMusicSource=null,recordMusicGain=null,recordAudioDestination=null,selectedMusic={id:'none',name:'Sin música de fondo',url:''},pendingMusic={id:'none',name:'Sin música de fondo',url:'',objectUrl:false},pendingMusicObjectUrl=null;
-musicPlayer.loop=true;musicPlayer.preload='auto';
+musicPlayer.loop=true;musicPlayer.preload='metadata';
 const musicLibrary={
-'break-dance':{name:'Break dance',url:'assets/bases-laterales/1.wav'},
-'cumbia':{name:'Cumbia',url:'assets/bases-laterales/2.wav'},
-'cuarteto':{name:'Cuarteto',url:'assets/bases-laterales/3.wav'},
-'cinematico':{name:'Cinemático',url:'assets/bases-laterales/4.wav'},
-'electronica':{name:'Electrónica',url:'assets/bases-laterales/5.wav'},
-'epica':{name:'Épica',url:'assets/bases-laterales/6.wav'},
-'funk':{name:'Funk',url:'assets/bases-laterales/7.wav'},
-'hip-hop':{name:'Hip hop',url:'assets/bases-laterales/8.wav'},
-'jazz':{name:'Jazz',url:'assets/bases-laterales/9.wav'},
-'latino':{name:'Latino',url:'assets/bases-laterales/10.wav'},
-'merengue':{name:'Merengue',url:'assets/bases-laterales/11.wav'},
-'pop':{name:'Pop',url:'assets/bases-laterales/12.wav'},
-'rap':{name:'Rap',url:'assets/bases-laterales/13.wav'},
-'reggaeton':{name:'Reggaetón',url:'assets/bases-laterales/14.wav'},
-'reggae':{name:'Reggae',url:'assets/bases-laterales/15.wav'},
-'rock':{name:'Rock',url:'assets/bases-laterales/16.wav'},
-'salsa':{name:'Salsa',url:'assets/bases-laterales/17.wav'},
-'soft':{name:'Soft',url:'assets/bases-laterales/18.wav'},
-'tango':{name:'Tango',url:'assets/bases-laterales/19.wav'},
-'trap':{name:'Trap',url:'assets/bases-laterales/20.wav'}
+'break-dance':{name:'Break dance',url:'assets/bases-laterales/1.mp3'},
+'cumbia':{name:'Cumbia',url:'assets/bases-laterales/2.mp3'},
+'cuarteto':{name:'Cuarteto',url:'assets/bases-laterales/3.mp3'},
+'cinematico':{name:'Cinemático',url:'assets/bases-laterales/4.mp3'},
+'electronica':{name:'Electrónica',url:'assets/bases-laterales/5.mp3'},
+'epica':{name:'Épica',url:'assets/bases-laterales/6.mp3'},
+'funk':{name:'Funk',url:'assets/bases-laterales/7.mp3'},
+'hip-hop':{name:'Hip hop',url:'assets/bases-laterales/8.mp3'},
+'jazz':{name:'Jazz',url:'assets/bases-laterales/9.mp3'},
+'latino':{name:'Latino',url:'assets/bases-laterales/10.mp3'},
+'merengue':{name:'Merengue',url:'assets/bases-laterales/11.mp3'},
+'pop':{name:'Pop',url:'assets/bases-laterales/12.mp3'},
+'rap':{name:'Rap',url:'assets/bases-laterales/13.mp3'},
+'reggaeton':{name:'Reggaetón',url:'assets/bases-laterales/14.mp3'},
+'reggae':{name:'Reggae',url:'assets/bases-laterales/15.mp3'},
+'rock':{name:'Rock',url:'assets/bases-laterales/16.mp3'},
+'salsa':{name:'Salsa',url:'assets/bases-laterales/17.mp3'},
+'soft':{name:'Soft',url:'assets/bases-laterales/18.mp3'},
+'tango':{name:'Tango',url:'assets/bases-laterales/19.mp3'},
+'trap':{name:'Trap',url:'assets/bases-laterales/20.mp3'}
 };
 let mediaRecorder=null,recordedChunks=[],recordedBlob=null,recordedUrl=null,recordingMime='';
 let pose=null,poseReady=false,poseBusy=false,lastPose=0;

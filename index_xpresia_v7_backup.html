@@ -185,7 +185,7 @@ const activation=document.getElementById('activation');
 let stream=null,initPromise=null,cameraReady=false,mirror=false,menuOpen=false,paused=false,countdown=false;
 let micStream=null,audioContext=null,audioSource=null,audioGain=null,audioDestination=null,micAnalyser=null,micEnabled=false,volumeLevel=.8;
 let musicAudio=new Audio(),musicSource=null,musicGain=null,musicPlayer=new Audio(),recordMusicPlayer=new Audio(),recordAudioContext=null,recordMusicSource=null,recordMusicGain=null,recordAudioDestination=null,selectedMusic={id:'none',name:'Sin música de fondo',url:''},pendingMusic={id:'none',name:'Sin música de fondo',url:'',objectUrl:false},pendingMusicObjectUrl=null;
-musicPlayer.loop=true;musicPlayer.preload='auto';
+musicPlayer.loop=true;musicPlayer.preload='metadata';
 const musicLibrary={
   'pop':{name:'Pop',url:'assets/bases-laterales/1.mp3'},
   'rock':{name:'Rock',url:'assets/bases-laterales/2.mp3'},
@@ -195,14 +195,14 @@ const musicLibrary={
   'rap':{name:'Rap',url:'assets/bases-laterales/6.mp3'},
   'latino':{name:'Latino',url:'assets/bases-laterales/7.mp3'},
   'tango':{name:'Tango',url:'assets/bases-laterales/8.mp3'},
-  'jazz':{name:'Jazz',url:'assets/bases-laterales/9.wav'},
-  'salsa':{name:'Salsa',url:'assets/bases-laterales/10.wav'},
-  'cumbia':{name:'Cumbia',url:'assets/bases-laterales/11.wav'},
-  'cuarteto':{name:'Cuarteto',url:'assets/bases-laterales/12.wav'},
-  'merengue':{name:'Merengue',url:'assets/bases-laterales/13.wav'},
-  'reggaeton':{name:'Reggaetón',url:'assets/bases-laterales/14.wav'},
-  'soft':{name:'Soft',url:'assets/bases-laterales/15.wav'},
-  'cinematico':{name:'Cinemático',url:'assets/bases-laterales/16.wav'},
+  'jazz':{name:'Jazz',url:'assets/bases-laterales/9.mp3'},
+  'salsa':{name:'Salsa',url:'assets/bases-laterales/10.mp3'},
+  'cumbia':{name:'Cumbia',url:'assets/bases-laterales/11.mp3'},
+  'cuarteto':{name:'Cuarteto',url:'assets/bases-laterales/12.mp3'},
+  'merengue':{name:'Merengue',url:'assets/bases-laterales/13.mp3'},
+  'reggaeton':{name:'Reggaetón',url:'assets/bases-laterales/14.mp3'},
+  'soft':{name:'Soft',url:'assets/bases-laterales/15.mp3'},
+  'cinematico':{name:'Cinemático',url:'assets/bases-laterales/16.mp3'},
   'epica':{name:'Épica',url:'assets/bases-laterales/17.mp3'},
   'electronica':{name:'Electrónica',url:'assets/bases-laterales/18.mp3'},
   'funk':{name:'Funk',url:'assets/bases-laterales/19.mp3'},
