@@ -639,7 +639,35 @@ async function saveEvaluationToHistory(r){
 
 function detectVoicePitch(){if(!micAnalyser||!audioContext)return null;const n=256,buf=new Float32Array(n);micAnalyser.getFloatTimeDomainData(buf);let sum=0;for(let i=0;i<n;i++)sum+=buf[i]*buf[i];const rms=Math.sqrt(sum/n);voiceRmsHistory.push(rms);if(voiceRmsHistory.length>600)voiceRmsHistory.shift();const recent=voiceRmsHistory.slice(-40);const sortedR=[...recent].sort((a,b)=>a-b);const floor=sortedR[Math.floor(sortedR.length*.2)]||0.003;const threshold=Math.max(.012,floor*2.2);if(rms<threshold)return null;let bestTau=-1,bestCorr=0;const minTau=Math.max(2,Math.floor(audioContext.sampleRate/1000)),maxTau=Math.min(n-2,Math.floor(audioContext.sampleRate/75));for(let tau=minTau;tau<=maxTau;tau+=2){let corr=0,e1=0,e2=0;for(let i=0;i<n-tau;i+=2){const a=buf[i],b=buf[i+tau];corr+=a*b;e1+=a*a;e2+=b*b}const norm=corr/Math.sqrt((e1*e2)||1);if(norm>bestCorr){bestCorr=norm;bestTau=tau}}if(bestTau<0||bestCorr<.55)return null;const pitch=audioContext.sampleRate/bestTau;if(pitch<75||pitch>1000)return null;return{pitch,rms,confidence:bestCorr}}
 function sampleVoice(){if(!micEnabled||!micAnalyser)return;const now=performance.now();if(now-lastVoiceSampleAt<100)return;lastVoiceSampleAt=now;const v=detectVoicePitch();if(!v)return;voicePitchHistory.push(v.pitch);if(voicePitchHistory.length>600)voicePitchHistory.shift();voiceSamples.push({t:now,pitch:v.pitch,rms:v.rms,confidence:v.confidence});if(voiceSamples.length>600)voiceSamples.shift();if(now-lastVoiceAnalysisAt>=180){lastVoiceAnalysisAt=now;voiceScoreCache=updateVoiceScore()}}
-function updateVoiceScore(){if(!voiceSamples.length)return null;const cents=voiceSamples.map(v=>1200*Math.log2(v.pitch/440));const sorted=[...cents].sort((a,b)=>a-b),median=sorted[Math.floor(sorted.length/2)];const deviations=cents.map(c=>Math.abs(c-median));const mad=[...deviations].sort((a,b)=>a-b)[Math.floor(deviations.length/2)]||0;const pitchStability=Math.max(0,1-Math.min(1,mad/95));let nearestErr=0;for(const c of cents){nearestErr+=Math.abs(c-Math.round(c/100)*100)}nearestErr/=cents.length;const pitchAccuracy=Math.max(0,1-Math.min(1,nearestErr/50));const rms=voiceSamples.map(v=>v.rms),mean=rms.reduce((a,b)=>a+b,0)/rms.length||1e-6;const sd=Math.sqrt(rms.reduce((a,b)=>a+(b-mean)**2,0)/rms.length);const dynamics=Math.max(0,Math.min(1,sd/(mean*.75+.004)));const range=Math.max(...cents)-Math.min(...cents);const pitchRange=Math.max(0,Math.min(1,range/900));const presence=Math.min(1,voiceSamples.length/Math.max(20,(currentElapsed()*8)));setVoiceMetric('Pitch',pitchAccuracy*100);setVoiceMetric('PitchStability',pitchStability*100);setVoiceMetric('Dynamics',dynamics*100);setVoiceMetric('VoicePresence',presence*100);const el=document.getElementById('voiceHint');if(el)el.textContent=`Voz detectada · rango tonal ${Math.round(range)} cents · muestras ${voiceSamples.length}`;return{pitchAccuracy,pitchStability,dynamics,pitchRange,presence}}
+function updateVoiceScore(){
+  if(!voiceSamples.length)return null;
+  const freqs=voiceSamples.map(v=>v.pitch).filter(Number.isFinite);
+  if(!freqs.length)return null;
+  const cents=freqs.map(v=>1200*Math.log2(v/440));
+  const sorted=[...cents].sort((a,b)=>a-b),median=sorted[Math.floor(sorted.length/2)];
+  const deviations=cents.map(c=>Math.abs(c-median));
+  const mad=[...deviations].sort((a,b)=>a-b)[Math.floor(deviations.length/2)]||0;
+  const pitchStability=Math.max(0,1-Math.min(1,mad/110));
+  // Evaluate intonation relative to the nearest musical note, not relative
+  // to A4 itself. This makes the score meaningful across different voices.
+  let nearestErr=0;
+  for(const c of cents){nearestErr+=Math.abs(c-Math.round(c/100)*100)}
+  nearestErr/=cents.length;
+  const pitchAccuracy=Math.max(0,1-Math.min(1,nearestErr/55));
+  const rms=voiceSamples.map(v=>v.rms),mean=rms.reduce((a,b)=>a+b,0)/rms.length||1e-6;
+  const sd=Math.sqrt(rms.reduce((a,b)=>a+(b-mean)**2,0)/rms.length);
+  const dynamics=Math.max(0,Math.min(1,sd/(mean*.70+.004)));
+  const range=Math.max(...cents)-Math.min(...cents);
+  const pitchRange=Math.max(0,Math.min(1,range/900));
+  const elapsed=Math.max(1,currentElapsed());
+  const presence=Math.min(1,voiceSamples.length/Math.max(10,elapsed*5));
+  const activeRatio=Math.min(1,voiceSamples.length/Math.max(12,elapsed*8));
+  const score=clamp01(.38*pitchAccuracy+.24*pitchStability+.13*dynamics+.10*pitchRange+.10*presence+.05*activeRatio);
+  setVoiceMetric('Pitch',pitchAccuracy*100);setVoiceMetric('PitchStability',pitchStability*100);setVoiceMetric('Dynamics',dynamics*100);setVoiceMetric('VoicePresence',presence*100);
+  const el=document.getElementById('voiceHint');if(el)el.textContent=`Voz detectada · rango tonal ${Math.round(range)} cents · muestras ${voiceSamples.length}`;
+  return{pitchAccuracy,pitchStability,dynamics,pitchRange,presence,activeRatio,score};
+}
+
 function voiceCompute(){const v=voiceScoreCache||(voiceSamples.length?updateVoiceScore():null);if(!v)return null;return{...v,score:.38*v.pitchAccuracy+.27*v.pitchStability+.15*v.dynamics+.10*v.pitchRange+.10*v.presence}}
 function clamp01(v){return Math.max(0,Math.min(1,Number.isFinite(v)?v:0))}
 function scoreCurve(v,mid=.5,sharp=1.8){
@@ -660,32 +688,85 @@ function startReadingRecognition(){
   }catch(e){readingRecognitionSupported=false;return false}
 }
 function stopReadingRecognition(){try{if(readingRecognition){readingRecognition.onend=null;readingRecognition.stop()}}catch(e){}readingRecognition=null}
+function getReadingPassageForDuration(sec){
+  const passages={
+    short:'Leer con claridad también es una forma de expresarse. La voz puede transmitir calma, energía y emoción.',
+    medium:'La expresión no está solamente en las palabras. También vive en la voz, en las pausas, en la intención y en la manera en que comunicamos una idea. Lee este texto con naturalidad, respetando cada frase y dejando que la voz acompañe el significado.',
+    long:'La expresión humana tiene muchas formas. Una buena lectura no consiste solamente en pronunciar palabras: también requiere comprender una idea, respetar sus pausas, cambiar la intención cuando el mensaje lo necesita y mantener una voz clara. Lee con tranquilidad, observa los signos de puntuación y procura que cada frase tenga un sentido propio. La comunicación mejora cuando la voz, el ritmo y la intención trabajan juntos. No se trata de leer más rápido, sino de conseguir que quien escucha pueda seguir el mensaje y sentir aquello que quieres comunicar.'
+  };
+  if(sec<=12)return passages.short;
+  if(sec<=35)return passages.medium;
+  return passages.long;
+}
+function setReadingPassageForDuration(sec){
+  const el=document.getElementById('readingText');
+  if(el)el.textContent=getReadingPassageForDuration(sec);
+}
 function readingCompute(voice){
   const expected=normalizeReadingText(document.getElementById('readingText')?.textContent||'');
   const spoken=normalizeReadingText(readingFinalText||readingTranscript);
-  let accuracy=0.55;
-  if(readingRecognitionSupported&&expected&&spoken){const a=expected.split(' '),b=spoken.split(' ');const dp=Array.from({length:a.length+1},()=>new Array(b.length+1).fill(0));for(let i=1;i<=a.length;i++)dp[i][0]=i;for(let j=1;j<=b.length;j++)dp[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+1);accuracy=Math.max(0,1-dp[a.length][b.length]/Math.max(a.length,b.length));}
-  const elapsed=Math.max(1,(performance.now()-readingStartedAt)/1000);const words=spoken?spoken.split(' ').filter(Boolean).length:0;const wpm=words/elapsed*60;const targetWpm=145;const fluencySpeed=Math.max(0,1-Math.min(1,Math.abs(wpm-targetWpm)/targetWpm));const pauseQuality=readingPauseCount>0?Math.max(0,1-Math.min(1,Math.abs(readingPauseCount-4)/7)):.45;const voiceQuality=voice?voice.score:.35;
-  const score=.42*accuracy+.23*fluencySpeed+.15*pauseQuality+.20*voiceQuality;
-  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=Math.round(v*100)};set('mReadAccuracy',accuracy);set('mReadFluency',fluencySpeed);set('mReadPauses',pauseQuality);set('mReadVoice',voiceQuality);const st=document.getElementById('readingStatus');if(st)st.textContent=readingRecognitionSupported?`Lectura detectada · ${words} palabras · ${Math.round(wpm)} palabras/min.`:'Lectura en modo vocal · el navegador no permitió comparar el texto.';return{accuracy,fluency:fluencySpeed,pauses:pauseQuality,voice:voiceQuality,score}}
+  const elapsed=Math.max(1,currentElapsed(),duration>0?duration:0);
+  const words=spoken?spoken.split(' ').filter(Boolean).length:0;
+  const targetWpm=145;
+  const wpm=words/elapsed*60;
+  let accuracy=.5;
+  if(readingRecognitionSupported&&expected&&spoken){
+    const a=expected.split(' '),b=spoken.split(' ');
+    // Compare the portion the user had enough time to read, rather than
+    // penalizing unfinished text simply because the selected duration was short.
+    const expectedWindow=Math.max(1,Math.min(a.length,Math.round((elapsed/60)*targetWpm*1.15)));
+    const target=a.slice(0,expectedWindow);
+    const dp=Array.from({length:target.length+1},()=>new Array(b.length+1).fill(0));
+    for(let i=1;i<=target.length;i++)dp[i][0]=i;
+    for(let j=1;j<=b.length;j++)dp[0][j]=j;
+    for(let i=1;i<=target.length;i++)for(let j=1;j<=b.length;j++)dp[i][j]=target[i-1]===b[j-1]?dp[i-1][j-1]:Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+1);
+    accuracy=Math.max(0,1-dp[target.length][b.length]/Math.max(target.length,b.length));
+  }else if(words>0){
+    accuracy=.62;
+  }
+  const speedError=Math.abs(wpm-targetWpm)/targetWpm;
+  const fluencySpeed=words?Math.max(0,1-Math.min(1,speedError/.72)):.05;
+  const expectedPauseRate=elapsed<15?.8:elapsed<40?1.5:2.5;
+  const pauseRate=readingPauseCount/Math.max(.25,elapsed/60);
+  const pauseQuality=words?Math.max(0,1-Math.min(1,Math.abs(pauseRate-expectedPauseRate)/Math.max(2.5,expectedPauseRate*1.8))):.05;
+  const voiceQuality=voice?voice.score:.05;
+  const spokenCoverage=expected?Math.min(1,words/Math.max(1,Math.min(expected.split(' ').length,Math.round((elapsed/60)*targetWpm)))):0;
+  const dataConfidence=clamp01(.55*spokenCoverage+.45*Math.min(1,elapsed/30));
+  const score=clamp01(.34*accuracy+.24*fluencySpeed+.14*pauseQuality+.18*voiceQuality+.10*dataConfidence);
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=Math.round(clamp01(v)*100)};
+  set('mReadAccuracy',accuracy);set('mReadFluency',fluencySpeed);set('mReadPauses',pauseQuality);set('mReadVoice',voiceQuality);
+  const st=document.getElementById('readingStatus');
+  if(st)st.textContent=readingRecognitionSupported?`Lectura detectada · ${words} palabras · ${Math.round(wpm)} palabras/min · ${Math.round(dataConfidence*100)}% de datos útiles.`:'Lectura en modo vocal · el navegador no permitió comparar el texto.';
+  return{accuracy,fluency:fluencySpeed,pauses:pauseQuality,voice:voiceQuality,coverage:spokenCoverage,confidence:dataConfidence,score};
+}
 
+function durationReliability(elapsed,sampleCount){
+  const expected=Math.max(1,Math.round(elapsed*7));
+  return clamp01(sampleCount/expected);
+}
+function weightedBodyScore(r,profile){
+  const w=profile?.weights||{activity:.2,coordination:.2,fluidity:.2,stability:.2,variety:.2};
+  return clamp01(r.activity*w.activity+r.coordination*w.coordination+r.fluidity*w.fluidity+r.stability*w.stability+r.variety*w.variety);
+}
 function compute(){
   const soloVoice=(category==='sing'||category==='reading')&&evaluationMode==='voice';
+  const elapsed=Math.max(.5,currentElapsed());
   if(soloVoice){
     const voice=(micEnabled?voiceCompute():null);
     const reading=category==='reading'&&micEnabled?readingCompute(voice):null;
-    if(category==='sing'){const q=voice?.score||0;return{score:q*100,activity:0,coordination:0,fluidity:0,stability:0,variety:0,voice:q*100,duration:Math.max(0,currentElapsed()),sampleCount:voiceSamples.length,confidence:clamp01(voiceSamples.length/40),soloVoice:true};}
-    const q=reading?.score||0;return{score:q*100,activity:0,coordination:0,fluidity:0,stability:0,variety:0,voice:voice?voice.score*100:null,reading:q*100,duration:Math.max(0,currentElapsed()),sampleCount:voiceSamples.length,confidence:clamp01(voiceSamples.length/40),soloVoice:true};
+    if(category==='sing'){
+      const q=voice?.score??0;
+      const confidence=clamp01((voice?.activeRatio??0)*.7+Math.min(1,elapsed/12)*.3);
+      return{score:q*100,activity:0,coordination:0,fluidity:0,stability:0,variety:0,voice:q*100,duration:elapsed,sampleCount:voiceSamples.length,confidence,soloVoice:true};
+    }
+    const q=reading?.score??0;
+    return{score:q*100,activity:0,coordination:0,fluidity:0,stability:0,variety:0,voice:voice?voice.score*100:null,reading:q*100,duration:elapsed,sampleCount:voiceSamples.length,confidence:reading?.confidence??0,soloVoice:true};
   }
   if(!samples.length)return null;
   const n=samples.length;
   const vals=(key)=>samples.map(s=>Number.isFinite(s[key])?s[key]:0);
   const mean=(key)=>{const a=vals(key);return a.reduce((x,y)=>x+y,0)/Math.max(1,a.length)};
   const std=(key)=>{const a=vals(key),m=a.reduce((x,y)=>x+y,0)/Math.max(1,a.length);return Math.sqrt(a.reduce((x,y)=>x+(y-m)*(y-m),0)/Math.max(1,a.length))};
-
-  // Raw movement measures. They are deliberately kept separate so each
-  // skill can emphasize a different aspect instead of collapsing everything
-  // into one generic "movement" number.
   const activityRaw=clamp01(mean('energy'));
   const activeRaw=clamp01(mean('active')/13);
   const bilateralRaw=clamp01(mean('bilateral'));
@@ -693,65 +774,31 @@ function compute(){
   const centerMotion=mean('centerMotion');
   const amplitudeRaw=clamp01(mean('amplitude'));
   const energyVariation=clamp01(std('energy')*4.0);
-  const elapsed=Math.max(.5,(samples[n-1].t-samples[0].t)/1000);
   const changeRate=clamp01(directionChanges/Math.max(3,elapsed*.85));
-
-  // Activity: rewards meaningful movement, with a low-motion floor that
-  // makes standing still clearly different from active performance.
   const activity=clamp01(.58*scoreCurve(activityRaw,.22,2.0)+.27*activeRaw+.15*energyVariation);
-
-  // Coordination: body coverage + bilateral balance + continuity.
   const coordination=clamp01(.42*activeRaw+.38*bilateralRaw+.20*continuityRaw);
-
-  // Fluency: smoothness plus consistent engagement. Sudden energy jumps are
-  // penalized, but deliberate changes are not punished as strongly as noise.
   const smooth=clamp01(1-Math.min(1,std('continuity')*2.4));
   const fluidity=clamp01(.52*continuityRaw+.28*smooth+.20*activeRaw);
-
-  // Stability: controlled torso movement. A small amount of displacement is
-  // ideal; zero movement should not receive a perfect stability score.
   const controlledMotion=clamp01(1-Math.min(1,Math.abs(centerMotion-.22)/.75));
   const stability=clamp01(.52*controlledMotion+.28*bilateralRaw+.20*continuityRaw);
-
-  // Variety: direction changes + amplitude diversity + energy diversity.
   const ampVar=clamp01(std('amplitude')*4.5);
   const variety=clamp01(.48*changeRate+.30*ampVar+.22*energyVariation);
-
-  const w=profiles[category]?.weights||{activity:.2,coordination:.2,fluidity:.2,stability:.2,variety:.2};
-  let bodyRaw=activity*w.activity+coordination*w.coordination+fluidity*w.fluidity+stability*w.stability+variety*w.variety;
-  bodyRaw=clamp01(bodyRaw);
-
-  // Vocal analysis is independent from the body score. If voice samples are
-  // unavailable we do not manufacture a perfect/failed voice score; instead
-  // we grade the available body expression and expose the limitation.
+  const body={activity,coordination,fluidity,stability,variety};
+  const bodyRaw=weightedBodyScore(body,profiles[category]);
   const voice=(category==='sing'||category==='reading')&&micEnabled?voiceCompute():null;
   const reading=category==='reading'&&micEnabled?readingCompute(voice):null;
   let raw=bodyRaw;
-  if(category==='sing'&&voice){
-    const voiceQuality=clamp01(voice.score);
-    raw=clamp01(bodyRaw*.55+voiceQuality*.45);
-  }else if(category==='reading'&&reading){
-    raw=clamp01(bodyRaw*.55+reading.score*.45);
-  }
-
-  // Wide, centered 0-100 mapping. Unlike the previous fixed 50 fallback,
-  // this preserves differences between low, medium and high performances.
-  // A slight contrast boost prevents the common 60-70 compression.
-  const score=clamp01(.5+(raw-.5)*1.75)*100;
-  return{
-    score,
-    activity:activity*100,
-    coordination:coordination*100,
-    fluidity:fluidity*100,
-    stability:stability*100,
-    variety:variety*100,
-    voice:voice?voice.score*100:null,
-    reading:reading?reading.score*100:null,
-    duration:elapsed,
-    sampleCount:n,
-    confidence:clamp01(n/80)
-  };
+  if(category==='sing'&&voice)raw=clamp01(bodyRaw*.55+voice.score*.45);
+  else if(category==='reading'&&reading)raw=clamp01(bodyRaw*.55+reading.score*.45);
+  // Duration changes reliability, not the maximum. A 10-second test can still
+  // earn 100, while longer tests provide more evidence and consistency.
+  const reliability=durationReliability(elapsed,n);
+  const contrast=1.75;
+  const centered=clamp01(.5+(raw-.5)*contrast);
+  const score=clamp01(.70*centered+.30*(.5+(centered-.5)*Math.min(1.25,1+reliability*.25)))*100;
+  return{score,activity:activity*100,coordination:coordination*100,fluidity:fluidity*100,stability:stability*100,variety:variety*100,voice:voice?voice.score*100:null,reading:reading?reading.score*100:null,duration:elapsed,sampleCount:n,confidence:clamp01(.65*reliability+.35*Math.min(1,elapsed/20))};
 }
+
 function setMetric(name,v){document.getElementById('m'+name).textContent=Math.round(v);document.getElementById('f'+name).style.width=Math.max(0,Math.min(100,v))+'%'}
 function setVoiceMetric(name,v){const e=document.getElementById('m'+name);if(e)e.textContent=Math.round(v)}
 function updateScore(){const r=compute();if(!r)return;document.getElementById('score').textContent=Math.round(r.score);setMetric('Activity',r.activity);setMetric('Coordination',r.coordination);setMetric('Fluidity',r.fluidity);setMetric('Stability',r.stability);setMetric('Variety',r.variety);setTopScore(r.score);if(evalRunning)document.getElementById('topTimer').textContent=duration>0?formatTime(Math.max(0,duration-currentElapsed())):formatTime(currentElapsed());document.getElementById('topTimer').style.display='inline'}
@@ -768,7 +815,7 @@ async function countdownStart(){if(countdown||evalRunning)return;userName=(docum
   if(needsMic&&!micEnabled){setTop('Esta evaluación necesita el micrófono activo.');return}
   if(!soloVoice){loadPose();setTop('Preparando el detector corporal…');const poseOk=await waitForPoseReady(8000);if(!poseOk){setTop('No se pudo preparar el detector corporal. Revisa tu conexión e inténtalo nuevamente.');return}}
   countdown=true;closePanels();const box=document.getElementById('countdown'),title=document.getElementById('countdownTitle'),text=document.getElementById('countdownText');box.style.display='flex';title.textContent=soloVoice?'Prepárate para usar tu voz.':'Prepárate, ahora evaluaremos tu desempeño.';text.textContent='';await new Promise(r=>setTimeout(r,1800));title.textContent='Evaluando en';for(const n of [3,2,1]){text.textContent=n;await new Promise(r=>setTimeout(r,700))}title.textContent='¡Comenzamos!';text.textContent='';await new Promise(r=>setTimeout(r,450));box.style.display='none';countdown=false;startEvaluation()}
-async function startEvaluation(){const soloVoice=(category==='sing'||category==='reading')&&evaluationMode==='voice';if(!soloVoice&&!poseReady){setTop('El detector corporal todavía no está listo.');return}resetScore();duration=+document.getElementById('duration').value;if(!soloVoice)startVideoRecording();evalRunning=true;updateEvaluationModeUI();if(soloVoice){if(voiceSamplingId)clearInterval(voiceSamplingId);voiceSamplingId=setInterval(()=>{if(evalRunning&&!evalPaused)sampleVoice()},100)}if(category==='reading'&&micEnabled)startReadingRecognition();if(selectedMusic.url){startBackgroundMusic();startRecordingMusic()}evalPaused=false;startTime=performance.now();elapsedBeforePause=0;setTop('Evaluando: '+profiles[category].name);document.getElementById('start').textContent='Evaluación en curso';document.getElementById('start').disabled=true;document.getElementById('pause').style.display='block';document.getElementById('finish').style.display='block';document.getElementById('topEvalControls').style.display='flex';document.getElementById('pauseTopBtn').textContent='⏸';document.getElementById('topTimer').style.display='inline';document.getElementById('topTimer').textContent=duration>0?formatTime(duration):'00:00';updateLiveMusicControls();startEvaluationTimer();if(poseReady===false)loadPose()}
+async function startEvaluation(){const soloVoice=(category==='sing'||category==='reading')&&evaluationMode==='voice';if(!soloVoice&&!poseReady){setTop('El detector corporal todavía no está listo.');return}resetScore();duration=+document.getElementById('duration').value;if(category==='reading')setReadingPassageForDuration(duration>0?duration:30);if(!soloVoice)startVideoRecording();evalRunning=true;updateEvaluationModeUI();if(soloVoice){if(voiceSamplingId)clearInterval(voiceSamplingId);voiceSamplingId=setInterval(()=>{if(evalRunning&&!evalPaused)sampleVoice()},100)}if(category==='reading'&&micEnabled)startReadingRecognition();if(selectedMusic.url){startBackgroundMusic();startRecordingMusic()}evalPaused=false;startTime=performance.now();elapsedBeforePause=0;setTop('Evaluando: '+profiles[category].name);document.getElementById('start').textContent='Evaluación en curso';document.getElementById('start').disabled=true;document.getElementById('pause').style.display='block';document.getElementById('finish').style.display='block';document.getElementById('topEvalControls').style.display='flex';document.getElementById('pauseTopBtn').textContent='⏸';document.getElementById('topTimer').style.display='inline';document.getElementById('topTimer').textContent=duration>0?formatTime(duration):'00:00';updateLiveMusicControls();startEvaluationTimer();if(poseReady===false)loadPose()}
 function pauseEvaluation(){if(!evalRunning)return;if(!evalPaused){elapsedBeforePause=currentElapsed();evalPaused=true;if(mediaRecorder&&mediaRecorder.state==='recording'&&mediaRecorder.pause)mediaRecorder.pause();if(selectedMusic.url){musicPlayer.pause();recordMusicPlayer.pause();if(recordMusicGain)recordMusicGain.gain.value=0}setTop('Evaluación pausada')}else{startTime=performance.now();evalPaused=false;if(duration>0){if(evalFinishGuardId)clearTimeout(evalFinishGuardId);evalFinishGuardId=setTimeout(()=>{if(evalRunning&&!evalPaused&&currentElapsed()>=duration)finishEvaluation(true)},Math.max(250,duration*1000-currentElapsed()*1000+500))}if(mediaRecorder&&mediaRecorder.state==='paused'&&mediaRecorder.resume)mediaRecorder.resume();if(selectedMusic.url){startBackgroundMusic();if(recordMusicGain)recordMusicGain.gain.value=volumeLevel;const p=recordMusicPlayer.play();if(p)p.catch(()=>{})}setTop('Evaluando: '+profiles[category].name)}document.getElementById('pause').textContent=evalPaused?'Continuar evaluación':'Pausar evaluación';document.getElementById('pauseTopBtn').textContent=evalPaused?'▶':'⏸';updateLiveMusicControls();}
 async function finishEvaluation(auto=false){
   if(!evalRunning||evalFinishing)return;
