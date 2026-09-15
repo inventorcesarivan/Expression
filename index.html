@@ -302,7 +302,7 @@ let pose=null,poseReady=false,poseBusy=false,lastPose=0;
 let category='dance',duration=60,userName='',evaluationMode='camera',voiceSamplingId=null;let imitationType='airguitar';
 const profiles={
  dance:{name:'Baile / Danza',description:'Prioriza actividad, coordinación, fluidez, variedad y continuidad del movimiento.',weights:{activity:.18,coordination:.25,fluidity:.25,stability:.12,variety:.20}},
- sing:{name:'Canto — voz + expresión',description:'Evalúa afinación, estabilidad vocal, dinámica y expresividad corporal. Para una evaluación completa, activa el micrófono.',weights:{activity:.10,coordination:.12,fluidity:.13,stability:.10,variety:.10,voice:.45}},
+ sing:{name:'Canto — voz + expresión',description:'Evalúa afinación, estabilidad vocal, dinámica y expresividad corporal mediante el micrófono y la expresión corporal.',weights:{activity:.10,coordination:.12,fluidity:.13,stability:.10,variety:.10,voice:.45}},
  acting:{name:'Actuación',description:'Prioriza expresividad corporal, variedad gestual, control y cambios de intensidad.',weights:{activity:.12,coordination:.18,fluidity:.20,stability:.20,variety:.30}},
  aura:{name:'Farmear Aura',description:'Busca actitud, presencia escénica, constancia, amplitud corporal y capacidad de sostener una energía expresiva.',weights:{activity:.20,coordination:.15,fluidity:.20,stability:.25,variety:.20}},
  imitation:{name:'Imitación / Air Performance',description:'Desafío creativo para recrear instrumentos invisibles, personajes, sonidos, gestos o situaciones mediante movimiento y expresividad.',weights:{activity:.18,coordination:.24,fluidity:.18,stability:.15,variety:.25}},
@@ -547,6 +547,15 @@ async function setMicrophoneEnabled(enabled){
     const spectrum=audioContext.createAnalyser();
     spectrum.fftSize=1024;spectrum.smoothingTimeConstant=.82;
     source.connect(analyser);source.connect(spectrum);source.connect(gain);gain.connect(audioDestination);
+    // Guardar la cadena real del micrófono en el estado global. Sin estas
+    // referencias las evaluaciones no podían consultar el analizador aunque
+    // el permiso del navegador se hubiera concedido.
+    micStream=newStream;
+    audioSource=source;
+    audioGain=gain;
+    micAnalyser=analyser;
+    spectrumAnalyser=spectrum;
+    micEnabled=true;
     if(selectedMusic.url)ensureAudioForMusicSync();
     return true;
   }catch(e){
@@ -904,7 +913,7 @@ async function finishEvaluation(auto=false){
   stopBackgroundMusic();
   try{await showFinal(r,auto)}catch(e){console.error('Error mostrando resultado:',e);setTop('Evaluación completada.');}
   try{if(mediaRecorder&&mediaRecorder.state!=='inactive')await stopVideoRecording()}catch(e){console.warn('Error al cerrar la grabación:',e)}
-  try{if(micEnabled)await setMicrophoneEnabled(false)}catch(e){console.warn('Error al cerrar el micrófono:',e)}
+  try{if(micStream||micEnabled)await setMicrophoneEnabled(false)}catch(e){console.warn('Error al cerrar el micrófono:',e)}
   evalFinishing=false;
 }
 function openStopConfirm(){document.getElementById('stopConfirm').style.display='flex'}
@@ -937,7 +946,7 @@ document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>platformShare
 document.getElementById('finalClose').onclick=()=>{closeResultPanels();document.getElementById('final').style.display='none';};
 function animateScore(target){const el=document.getElementById('finalScore');const start=performance.now();const dur=1100;function tick(now){const t=Math.min(1,(now-start)/dur);const eased=1-Math.pow(1-t,3);el.textContent=Math.round(target*eased);if(t<1)requestAnimationFrame(tick)}requestAnimationFrame(tick)}
 function celebrate(){const box=document.getElementById('celebration');box.innerHTML='<div class="celebrationBurst">🎉</div>';box.style.display='block';const pieces=['#ff3b81','#00e5ff','#ffd166','#7cff6b','#b36bff','#ff8c42','#ffffff'];for(let i=0;i<72;i++){const c=document.createElement('div');c.className='confetti';const angle=Math.random()*Math.PI*2,distance=18+Math.random()*58;c.style.left='50vw';c.style.top='42vh';c.style.background=pieces[Math.floor(Math.random()*pieces.length)];c.style.width=(6+Math.random()*7)+'px';c.style.height=(9+Math.random()*12)+'px';c.style.setProperty('--dx',Math.cos(angle)*distance+'vw');c.style.setProperty('--dy',Math.sin(angle)*distance+'vh');c.style.animationDuration=(1.8+Math.random()*1.8)+'s';c.style.animationDelay=(Math.random()*.15)+'s';c.style.transform='rotate('+Math.random()*360+'deg)';box.appendChild(c)}setTimeout(()=>{box.style.display='none';box.innerHTML=''},3900)}
-document.querySelectorAll('.skillCard,.secondarySkills button[data-category]').forEach(btn=>btn.onclick=()=>{if(evalRunning)return;category=btn.dataset.category;const sel=document.getElementById('category');if(sel)sel.value=category;evaluationMode='camera';updateDescription();resetScore();const v=document.getElementById('voiceEvaluation');if(v)v.style.display=category==='sing'?'block':'none';const rp=document.getElementById('readingPanel');if(rp)rp.style.display=category==='reading'?'block':'none';updateEvaluationModeUI();openPanel('evaluationPanel');setMicrophoneEnabled(true);});document.getElementById('learnAccess').onclick=()=>openPanel('learningPanel');document.getElementById('contactAccess').onclick=()=>openPanel('contactPanel');document.getElementById('collabAccess').onclick=()=>openPanel('collabPanel');document.getElementById('competitionAccess').onclick=()=>openPanel('competitionPanel');
+document.querySelectorAll('.skillCard,.secondarySkills button[data-category]').forEach(btn=>btn.onclick=()=>{if(evalRunning)return;category=btn.dataset.category;const sel=document.getElementById('category');if(sel)sel.value=category;evaluationMode='camera';updateDescription();resetScore();const v=document.getElementById('voiceEvaluation');if(v)v.style.display=category==='sing'?'block':'none';const rp=document.getElementById('readingPanel');if(rp)rp.style.display=category==='reading'?'block':'none';updateEvaluationModeUI();openPanel('evaluationPanel');setMicrophoneEnabled(true).catch(e=>console.warn('Micrófono:',e));});document.getElementById('learnAccess').onclick=()=>openPanel('learningPanel');document.getElementById('contactAccess').onclick=()=>openPanel('contactPanel');document.getElementById('collabAccess').onclick=()=>openPanel('collabPanel');document.getElementById('competitionAccess').onclick=()=>openPanel('competitionPanel');
 document.getElementById('mainClose').onclick=closePanels;document.getElementById('evaluationClose').onclick=returnToMain;document.getElementById('learningClose').onclick=returnToMain;document.getElementById('contactClose').onclick=returnToMain;document.getElementById('collabClose').onclick=returnToMain;document.getElementById('competitionClose').onclick=returnToMain;
 document.getElementById('menuBtn').onclick=()=>{if(menuOpen)closePanels();else openPanel('mainMenu')};document.getElementById('liveMusicPause').onclick=toggleLiveMusic;document.getElementById('liveMusicVolume').oninput=e=>{volumeLevel=parseFloat(e.target.value);if(musicGain)musicGain.gain.value=volumeLevel;if(recordMusicGain)recordMusicGain.gain.value=volumeLevel;musicPlayer.volume=volumeLevel;musicAudio.volume=volumeLevel;document.getElementById('volumeSlider').value=volumeLevel};document.getElementById('pauseTopBtn').onclick=()=>{if(evalRunning)pauseEvaluation()};document.getElementById('stopTopBtn').onclick=()=>{if(evalRunning)openStopConfirm()};document.getElementById('cancelStop').onclick=closeStopConfirm;document.getElementById('confirmStop').onclick=abortEvaluation;document.getElementById('volumeSlider').oninput=e=>{volumeLevel=parseFloat(e.target.value);if(audioGain)audioGain.gain.value=volumeLevel;if(musicGain)musicGain.gain.value=volumeLevel;if(recordMusicGain)recordMusicGain.gain.value=volumeLevel;musicPlayer.volume=volumeLevel;musicAudio.volume=volumeLevel;document.getElementById('liveMusicVolume').value=volumeLevel;const vv=document.getElementById('volumeValue');if(vv)vv.textContent=Math.round(volumeLevel*100)+'%'};document.getElementById('orientationClose').onclick=()=>document.getElementById('orientationOverlay').style.display='none';
 const initialVolumeValue=document.getElementById('volumeValue');if(initialVolumeValue)initialVolumeValue.textContent=Math.round(volumeLevel*100)+'%';
