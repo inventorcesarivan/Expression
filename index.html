@@ -365,11 +365,13 @@ function getStageScreenRect(){
   const top=Math.max(8,(tr?.bottom||46)+margin);
   const bottom=Math.min(innerHeight-8,(br?.top||innerHeight-50)-margin);
   const side=8;
-  const maxW=Math.min(isMobile?innerWidth-side*2:760,innerWidth-side*2);
-  const h=Math.max(180,bottom-top);
-  const w=Math.min(maxW,Math.floor(h*16/9));
-  const finalW=Math.min(maxW,w);
-  const finalH=Math.min(h,Math.floor(finalW*9/16));
+  // La cámara/imagen usa el mismo ancho útil que el panel principal de menú.
+  // En móvil ocupa todo el ancho disponible; en web respeta el máximo común de 760 px.
+  const maxW=Math.min(760,innerWidth-side*2);
+  const finalW=Math.max(180,maxW);
+  // La altura ocupa todo el espacio disponible entre cabecera y menú inferior,
+  // manteniendo una geometría común para web y móvil.
+  const finalH=Math.max(180,bottom-top);
   const x=Math.round((innerWidth-finalW)/2);
   const y=Math.round(top);
   return{x,y,w:finalW,h:finalH};
@@ -393,13 +395,17 @@ function drawSpectrum(){
   guidePanel.style.top='auto';
   const menuBar=document.getElementById('bottom'),menuRect=menuBar?.getBoundingClientRect();
   const menuMargin=Math.max(7,Math.round(innerWidth*.0075));
-  const targetBottom=menuRect&&menuRect.width>0?menuRect.top-menuMargin:innerHeight-8;
-  guidePanel.style.bottom=Math.max(0,innerHeight-targetBottom)+'px';
+  // El texto queda entre el panel superior y la imagen/cámara.
+  // Su borde inferior se alinea con el borde superior de la imagen, dejando un pequeño margen.
+  const stageTop=stage.y;
+  const guideGap=Math.max(7,Math.round(innerWidth*.0075));
+  guidePanel.style.bottom='auto';
+  guidePanel.style.top=Math.max(8,stageTop-guidePanel.offsetHeight-guideGap)+'px';
   const textSkill=category==='sing'||category==='acting'||category==='reading';
   const shouldShowGuide=!!(evalRunning&&textSkill&&textSource!=='none');
   guidePanel.style.display=shouldShowGuide?'block':'none';
   const guideRect=guidePanel.getBoundingClientRect();
-  const miniTop=shouldShowGuide?Math.max(stage.y+4,guideRect.top-miniGap-miniH):Math.max(stage.y+4,stage.y+stage.h-miniH-4);
+  const miniTop=shouldShowGuide?Math.max(stage.y+4,Math.min(stage.y+stage.h-miniH-4,stage.y+4)):Math.max(stage.y+4,stage.y+stage.h-miniH-4);
   const miniW=Math.min(innerWidth<700?280:Math.min(437,stage.w*.575),Math.max(160,innerWidth-24));
   mini.style.left='50%';
   mini.style.top=Math.round(miniTop)+'px';
