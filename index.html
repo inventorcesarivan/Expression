@@ -260,7 +260,7 @@ body{min-height:100dvh}video{display:none}canvas{position:fixed;inset:0;width:10
 <button class="evalModeCard cameraMode active" id="cameraModeBtn" type="button"><span class="evalModeIcon">📷</span><strong>Con cámara</strong><small>Voz + expresión corporal</small></button>
 <button class="evalModeCard voiceMode" id="voiceModeBtn" type="button"><span class="evalModeIcon">🎙️</span><strong>Solo micrófono</strong><small>Solo voz / narración · sin cámara</small></button><button class="evalModeCard karaokeMode" id="karaokeModeBtn" type="button"><span class="evalModeIcon">🎵</span><strong>Karaoke</strong><small>Video + música · solo voz</small></button>
 </div>
-<div class="readingPanel textConfigPanel" id="readingPanel"><div class="readingHeader" id="textConfigHeader">📝 Texto en pantalla</div><select id="textSourceSelect"><option value="sample" selected>Texto de ejemplo</option><option value="custom">Agrega tu propio texto</option><option value="none">Sin texto en pantalla</option></select><div id="customTextWrap" class="customTextWrap"><textarea id="customText" maxlength="3000" placeholder="Escribe o pega aquí tu texto..."></textarea><div class="customTextCount" id="customTextCount">0 / 3000</div></div><p class="readingStatus" id="readingStatus">El texto aparecerá al iniciar la evaluación solo si eliges mostrarlo.</p></div><div class="readingPanel karaokeConfigPanel" id="karaokeConfigPanel"><div class="readingHeader">🎵 Karaoke</div><p class="karaokeNote">Busca una canción de la biblioteca de Xpresia y selecciónala para cargar automáticamente su video desde Google Drive.</p><div class="karaokeLibrary"><div class="karaokeSearchRow"><input id="karaokeSearch" type="search" placeholder="🔎 Buscar canción o artista..." autocomplete="off"><button type="button" class="karaokeRefresh" id="karaokeRefreshBtn">↻ Actualizar</button></div><div class="karaokeResults" id="karaokeResults"><div class="karaokeEmpty">Cargando biblioteca...</div></div><div class="karaokeSelected" id="karaokeSelected" style="display:none"></div></div><details class="karaokeManual"><summary>➕ Cargar otro karaoke mediante enlace</summary><div class="karaokeUrlWrap show" id="karaokeUrlWrap"><input id="karaokeUrl" type="url" inputmode="url" placeholder="Pega aquí el enlace de YouTube o Google Drive" autocomplete="off"><div class="karaokeUrlActions"><button type="button" id="karaokeLoadBtn">▶ Cargar video</button><button type="button" id="karaokeClearBtn">✕ Limpiar</button></div><p class="karaokeStatus" id="karaokeStatus">Todavía no has cargado un video.</p></div></details></div>
+<div class="readingPanel textConfigPanel" id="readingPanel"><div class="readingHeader" id="textConfigHeader">📝 Texto en pantalla</div><select id="textSourceSelect"><option value="sample" selected>Texto de ejemplo</option><option value="custom">Agrega tu propio texto</option><option value="none">Sin texto en pantalla</option></select><div id="customTextWrap" class="customTextWrap"><textarea id="customText" maxlength="3000" placeholder="Escribe o pega aquí tu texto..."></textarea><div class="customTextCount" id="customTextCount">0 / 3000</div></div><p class="readingStatus" id="readingStatus">El texto aparecerá al iniciar la evaluación solo si eliges mostrarlo.</p></div><div class="readingPanel karaokeConfigPanel" id="karaokeConfigPanel"><div class="readingHeader">🎵 Karaoke</div><p class="karaokeNote">La biblioteca se cargará automáticamente desde la carpeta de Google Drive de Xpresia. Agrega vídeos a la carpeta y usa ↻ Actualizar.</p><div class="karaokeLibrary"><div class="karaokeSearchRow"><input id="karaokeSearch" type="search" placeholder="🔎 Buscar canción o artista..." autocomplete="off"><button type="button" class="karaokeRefresh" id="karaokeRefreshBtn">↻ Actualizar</button></div><div class="karaokeResults" id="karaokeResults"><div class="karaokeEmpty">Cargando biblioteca...</div></div><div class="karaokeSelected" id="karaokeSelected" style="display:none"></div></div><details class="karaokeManual"><summary>➕ Cargar otro karaoke mediante enlace</summary><div class="karaokeUrlWrap show" id="karaokeUrlWrap"><input id="karaokeUrl" type="url" inputmode="url" placeholder="Pega aquí el enlace de YouTube o Google Drive" autocomplete="off"><div class="karaokeUrlActions"><button type="button" id="karaokeLoadBtn">▶ Cargar video</button><button type="button" id="karaokeClearBtn">✕ Limpiar</button></div><p class="karaokeStatus" id="karaokeStatus">Todavía no has cargado un video.</p></div></details></div>
 
 <div class="menuSection mediaModeSection"><button class="modeCard musicModeCard heartbeat" id="musicAccess" type="button"><span class="modeIcon">🎵</span><span class="modeText"><strong>Evaluar con música de fondo</strong><small>Movimiento + presencia · Recomendado</small></span><span class="modeArrow">›</span></button><p class="hint modeStatus" id="musicSelectedStatus">Sin música de fondo seleccionada.</p></div>
 <div class="mainButtons" style="margin-top:12px"><button class="primary startEvalButton heartbeat" id="start"><span class="startIcon">▶</span><span><strong>COMENZAR EVALUACIÓN</strong><small>¡Demuestra tu talento!</small></span></button><button id="pause" style="display:none">Pausar evaluación</button><button id="finish" style="display:none">Finalizar evaluación</button></div>
@@ -706,20 +706,49 @@ function prepareUrlMusic(){const input=document.getElementById('musicUrl');const
 async function saveMusicSelection(){if(pendingMusic.id==='custom'&&!pendingMusic.url){setMusicStatus('Selecciona primero un archivo de audio.');return}if(pendingMusic.id==='url'&&!pendingMusic.url){if(!prepareUrlMusic())return}selectedMusic={id:pendingMusic.id,name:pendingMusic.name,url:pendingMusic.url,sourceUrl:pendingMusic.sourceUrl||''};stopPreviewMusic();if(pendingMusicObjectUrl){pendingMusicObjectUrl=null}setTop(selectedMusic.url?'Música configurada: '+selectedMusic.name:'Música de fondo desactivada');updateMusicSelectedStatus();openPanel('evaluationPanel')}
 function parseYouTubeId(url){try{const u=new URL(url);if(u.hostname.includes('youtu.be'))return u.pathname.split('/').filter(Boolean)[0]||'';if(u.hostname.includes('youtube.com')){if(u.pathname==='/watch')return u.searchParams.get('v')||'';if(u.pathname.startsWith('/shorts/'))return u.pathname.split('/')[2]||'';if(u.pathname.startsWith('/embed/'))return u.pathname.split('/')[2]||''}}catch(e){}return ''}
 function parseDriveId(url){try{const u=new URL(url);if(!u.hostname.includes('drive.google.com'))return '';const m=u.pathname.match(/\/file\/d\/([^/]+)/i);if(m)return m[1];return u.searchParams.get('id')||''}catch(e){}return ''}
+const KARAOKE_API_URL = 'https://script.google.com/macros/s/AKfycbxwCLUEeIhVcna-iYUADBjfn9Tf1C9lxvkmCU40EbVO_CiOikETJUT-b-U82HBgn9XeOA/exec';
+const KARAOKE_FOLDER_ID = '1aU7Zsf3p0VFGoFr2tM09h_ZShni9IkL2';
+
+function loadKaraokeLibraryFromAppsScript(){
+  return new Promise((resolve,reject)=>{
+    const api=String(KARAOKE_API_URL||'').trim();
+    if(!api){reject(new Error('KARAOKE_API_URL no configurada'));return}
+    const callback='xpresiaKaraokeCallback_'+Date.now()+'_'+Math.floor(Math.random()*100000);
+    let finished=false;
+    const script=document.createElement('script');
+    const cleanup=()=>{try{delete window[callback]}catch(e){};script.remove()};
+    const timer=setTimeout(()=>{if(finished)return;finished=true;cleanup();reject(new Error('Tiempo de espera agotado al consultar Apps Script'))},12000);
+    window[callback]=(data)=>{if(finished)return;finished=true;clearTimeout(timer);cleanup();if(data&&data.ok&&Array.isArray(data.songs)){resolve(data.songs)}else{reject(new Error(data?.error||'Apps Script no devolvió una biblioteca válida'))}};
+    script.onerror=()=>{if(finished)return;finished=true;clearTimeout(timer);cleanup();reject(new Error('No se pudo contactar con Apps Script'))};
+    script.src=api+(api.includes('?')?'&':'?')+'callback='+encodeURIComponent(callback)+'&folderId='+encodeURIComponent(KARAOKE_FOLDER_ID)+'&_='+Date.now();
+    document.head.appendChild(script);
+  });
+}
+
 async function loadKaraokeLibrary(){
   const box=document.getElementById('karaokeResults');
-  if(box)box.innerHTML='<div class="karaokeEmpty">Cargando biblioteca...</div>';
+  if(box)box.innerHTML='<div class="karaokeEmpty">🔄 Cargando biblioteca de Google Drive...</div>';
   try{
-    const res=await fetch('karaoke-library.json?v='+Date.now(),{cache:'no-store'});
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    const data=await res.json();
-    karaokeLibrary=Array.isArray(data)?data:(Array.isArray(data.songs)?data.songs:[]);
+    let data=[];
+    if(String(KARAOKE_API_URL||'').trim()){
+      data=await loadKaraokeLibraryFromAppsScript();
+    }else{
+      const res=await fetch('karaoke-library.json?v='+Date.now(),{cache:'no-store'});
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      const local=await res.json();
+      data=Array.isArray(local)?local:(Array.isArray(local.songs)?local.songs:[]);
+    }
+    karaokeLibrary=Array.isArray(data)?data:[];
     renderKaraokeLibrary(document.getElementById('karaokeSearch')?.value||'');
+    const note=document.querySelector('.karaokeNote');
+    if(note)note.textContent=String(KARAOKE_API_URL||'').trim()?'Biblioteca conectada a la carpeta de Google Drive. Agrega vídeos a la carpeta y pulsa ↻ Actualizar.':'Biblioteca local de prueba. Configura KARAOKE_API_URL para leer directamente la carpeta de Google Drive.';
   }catch(err){
+    console.error('Biblioteca Karaoke:',err);
     karaokeLibrary=[];
-    if(box)box.innerHTML='<div class="karaokeEmpty">No se pudo cargar la biblioteca. Puedes usar “Cargar otro karaoke mediante enlace”.</div>';
+    if(box)box.innerHTML='<div class="karaokeEmpty">No se pudo consultar la biblioteca de Google Drive. Revisa la URL de Apps Script y los permisos. También puedes usar “Cargar otro karaoke mediante enlace”.</div>';
   }
 }
+
 function normalizeKaraokeSearch(v){
   return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 }
