@@ -710,35 +710,39 @@ function loadKaraokeVideo(){
     if(driveVideo){driveVideo.pause();driveVideo.removeAttribute('src');driveVideo.load();driveVideo.style.display='none'}
     if(frame){const origin=(location.protocol==='http:'||location.protocol==='https:')?location.origin:'';const params=new URLSearchParams({enablejsapi:'1',playsinline:'1',rel:'0'});if(origin)params.set('origin',origin);frame.src='https://www.youtube.com/embed/'+encodeURIComponent(ytId)+'?'+params.toString();frame.style.display='block'}
   }else{
-    if(frame){frame.src='';frame.style.display='none'}
-    if(driveVideo){
-      // Google Drive: usar el contenido del archivo directamente en un <video> HTML5.
-      // Esto permite que el botón "Comenzar evaluación" sea el gesto del usuario que inicia la reproducción.
-      driveVideo.src='https://drive.google.com/uc?export=download&id='+encodeURIComponent(driveId);
-      driveVideo.style.display='block';driveVideo.load();
-      driveVideo.onloadedmetadata=()=>{if(status)status.textContent='Video de Google Drive listo. Al comenzar la evaluación intentaremos reproducirlo automáticamente.'};
-      driveVideo.onerror=()=>{if(status)status.textContent='No se pudo reproducir directamente el video de Drive. Comprueba que el archivo sea un video y que siga compartido como lector.'};
+    // Google Drive: usar el visor oficial /preview. El archivo de Drive que probamos
+    // funciona correctamente con este reproductor; la URL /uc?export=download no
+    // es fiable para <video> HTML5 porque Drive puede responder con una página de
+    // confirmación/redirección en lugar del flujo de vídeo.
+    if(driveVideo){driveVideo.pause();driveVideo.removeAttribute('src');driveVideo.load();driveVideo.style.display='none'}
+    if(frame){
+      frame.src='https://drive.google.com/file/d/'+encodeURIComponent(driveId)+'/preview';
+      frame.style.display='block';
+      frame.setAttribute('allow','autoplay; encrypted-media; fullscreen; picture-in-picture');
+      frame.setAttribute('allowfullscreen','');
     }
   }
   if(status&&ytId)status.textContent=location.protocol==='file:'?'Video preparado. Para probar YouTube correctamente, abre Xpresia desde su URL publicada (Netlify) y no como archivo local.':'Video de YouTube cargado. Puedes seleccionar Karaoke y comenzar la evaluación.';
-  if(status&&driveId)status.textContent='Video de Google Drive cargado. Al comenzar la evaluación se intentará reproducir automáticamente.';
+  if(status&&driveId)status.textContent='Video de Google Drive cargado. Al comenzar la evaluación, pulsa ▶ en el reproductor para iniciar el karaoke.';
   evaluationMode='karaoke';stopCamera();updateEvaluationModeUI();return true
 }
 function clearKaraokeVideo(){karaokeVideoId='';karaokeReady=false;karaokeSourceType='';const frame=document.getElementById('karaokeFrame');if(frame){frame.src='';frame.style.display='none'}const driveVideo=document.getElementById('karaokeDriveVideo');if(driveVideo){driveVideo.pause();driveVideo.removeAttribute('src');driveVideo.load();driveVideo.style.display='none';driveVideo.onerror=null;driveVideo.onloadedmetadata=null}const input=document.getElementById('karaokeUrl');if(input)input.value='';const status=document.getElementById('karaokeStatus');if(status)status.textContent='Todavía no has cargado un video.';if(evaluationMode==='karaoke')evaluationMode='camera';updateEvaluationModeUI()}
 function karaokeTimeText(sec){sec=Math.max(0,Math.floor(sec||0));return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
-function updateKaraokeControls(){const v=document.getElementById('karaokeDriveVideo'),bar=document.getElementById('karaokeControls'),play=document.getElementById('karaokePlayBtn'),seek=document.getElementById('karaokeSeek'),time=document.getElementById('karaokeTime'),mute=document.getElementById('karaokeMuteBtn');if(!v||!bar)return;bar.style.display=evalRunning&&karaokeSourceType==='drive'?'flex':'none';if(play)play.textContent=v.paused?'▶':'⏸';if(seek&&Number.isFinite(v.duration)&&v.duration>0)seek.value=(v.currentTime/v.duration)*100;if(time)time.textContent=karaokeTimeText(v.currentTime)+' / '+karaokeTimeText(v.duration);if(mute)mute.textContent=v.muted||v.volume===0?'🔇':'🔊'}
-function primeKaraokePlayback(){if(karaokeSourceType!=='drive'||!karaokeVideoId)return;const v=document.getElementById('karaokeDriveVideo');if(!v)return;try{v.muted=true;const p=v.play();if(p&&typeof p.then==='function'){p.then(()=>{setTimeout(()=>{if(!evalRunning){v.pause();try{v.currentTime=0}catch(e){}updateKaraokeControls()}},80)}).catch(()=>{})}}catch(e){}}
+function updateKaraokeControls(){const v=document.getElementById('karaokeDriveVideo'),bar=document.getElementById('karaokeControls'),play=document.getElementById('karaokePlayBtn'),seek=document.getElementById('karaokeSeek'),time=document.getElementById('karaokeTime'),mute=document.getElementById('karaokeMuteBtn');if(!v||!bar)return;bar.style.display='none';if(play)play.textContent=v.paused?'▶':'⏸';if(seek&&Number.isFinite(v.duration)&&v.duration>0)seek.value=(v.currentTime/v.duration)*100;if(time)time.textContent=karaokeTimeText(v.currentTime)+' / '+karaokeTimeText(v.duration);if(mute)mute.textContent=v.muted||v.volume===0?'🔇':'🔊'}
+function primeKaraokePlayback(){return;}
 function playKaraoke(){
   if(!karaokeVideoId)return;
   if(karaokeSourceType==='drive'){
-    const v=document.getElementById('karaokeDriveVideo');if(!v)return;
-    try{v.muted=false;v.volume=1}catch(e){}
-    const p=v.play();if(p&&typeof p.catch==='function')p.catch(()=>{const st=document.getElementById('karaokeStatus');if(st)st.textContent='El navegador no permitió el inicio automático. Usa el botón ▶ de los controles de Xpresia para iniciar el karaoke.'});
-    updateKaraokeControls();return;
+    // El visor /preview de Drive es un iframe de origen cruzado y no permite
+    // controlar su reproducción con video.play() desde Xpresia. Dejamos que
+    // el reproductor oficial de Drive gestione Play/Pausa y sus controles.
+    const st=document.getElementById('karaokeStatus');
+    if(st&&evalRunning)st.textContent='Karaoke listo. Pulsa ▶ dentro del reproductor para comenzar la canción.';
+    return;
   }
   const frame=document.getElementById('karaokeFrame');if(!frame)return;frame.contentWindow?.postMessage(JSON.stringify({event:'command',func:'playVideo',args:[]}), '*')
 }
-function pauseKaraoke(){if(karaokeSourceType==='drive'){const v=document.getElementById('karaokeDriveVideo');if(v)v.pause();updateKaraokeControls();return}const frame=document.getElementById('karaokeFrame');if(!frame)return;frame.contentWindow?.postMessage(JSON.stringify({event:'command',func:'pauseVideo',args:[]}), '*')}
+function pauseKaraoke(){if(karaokeSourceType==='drive'){const st=document.getElementById('karaokeStatus');if(st&&evalRunning)st.textContent='Evaluación pausada. El reproductor de Drive conserva sus controles propios.';return}const frame=document.getElementById('karaokeFrame');if(!frame)return;frame.contentWindow?.postMessage(JSON.stringify({event:'command',func:'pauseVideo',args:[]}), '*')}
 (function initKaraokeControls(){const v=document.getElementById('karaokeDriveVideo'),play=document.getElementById('karaokePlayBtn'),seek=document.getElementById('karaokeSeek'),mute=document.getElementById('karaokeMuteBtn');if(!v)return;['loadedmetadata','timeupdate','play','pause','volumechange','ended'].forEach(ev=>v.addEventListener(ev,updateKaraokeControls));if(play)play.onclick=()=>{if(v.paused)playKaraoke();else pauseKaraoke()};if(seek)seek.oninput=()=>{if(Number.isFinite(v.duration)&&v.duration>0)v.currentTime=(parseFloat(seek.value)/100)*v.duration;updateKaraokeControls()};if(mute)mute.onclick=()=>{v.muted=!v.muted;updateKaraokeControls()}})();
 document.getElementById('cameraModeBtn').onclick=()=>setEvaluationMode('camera');document.getElementById('voiceModeBtn').onclick=()=>setEvaluationMode('voice');document.getElementById("karaokeModeBtn").onclick=()=>setEvaluationMode("karaoke");document.getElementById("karaokeLoadBtn").onclick=loadKaraokeVideo;document.getElementById("karaokeClearBtn").onclick=clearKaraokeVideo;document.getElementById('musicAccess').onclick=openMusicPanel;document.getElementById('cancelMusic').onclick=cancelMusicPanel;document.getElementById('saveMusic').onclick=saveMusicSelection;document.getElementById('musicLinkTest').onclick=prepareUrlMusic;document.getElementById('musicSelect').onchange=e=>{const id=e.target.value;document.getElementById('musicFileWrap').style.display=id==='custom'?'block':'none';document.getElementById('musicUrlWrap').style.display=id==='url'?'block':'none';if(id==='none'){pendingMusic={id:'none',name:'Sin música de fondo',url:'',objectUrl:false};previewMusic(pendingMusic);return}if(id==='custom'){pendingMusic={id:'custom',name:'Mi música',url:'',objectUrl:true};setMusicStatus('Selecciona un archivo de audio para escucharlo.');return}if(id==='url'){pendingMusic={id:'url',name:'Base desde enlace',url:'',sourceUrl:'',objectUrl:false};setMusicStatus('Pega un enlace directo a un archivo de audio y pulsa “Probar enlace”.');return}const item=musicLibrary[id];pendingMusic={id,name:item.name,url:item.url,objectUrl:false};previewMusic(pendingMusic)};updateMusicSelectedStatus();document.getElementById('musicFile').onchange=e=>{const file=e.target.files?.[0];if(!file)return;if(pendingMusicObjectUrl)URL.revokeObjectURL(pendingMusicObjectUrl);pendingMusicObjectUrl=URL.createObjectURL(file);pendingMusic={id:'custom',name:file.name,url:pendingMusicObjectUrl,objectUrl:true};previewMusic(pendingMusic)};document.getElementById('musicUrl').onchange=()=>{if(document.getElementById('musicUrl').value.trim())prepareUrlMusic()};
 
