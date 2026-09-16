@@ -140,10 +140,10 @@ body{min-height:100dvh}video{display:none}canvas{position:fixed;inset:0;width:10
 @media(max-width:700px){.xpresiaDashboard{width:calc(100vw - 16px);height:auto;aspect-ratio:16/9;max-height:calc(100dvh - 170px);padding:13px 11px;top:calc(50% + 16px)}.dashboardBrand{margin-bottom:6px}.dashboardLogo{font-size:34px}.dashboardTag{font-size:7px;letter-spacing:1.5px}.dashboardClaim{font-size:11px}.dashboardIntro{margin-bottom:8px}.dashboardIntro h2{font-size:15px}.dashboardIntro p{font-size:10px}.skillCards{grid-template-columns:repeat(2,1fr);gap:7px}.skillCard{height:205px;border-radius:14px}.skillContent{left:7px;right:7px;bottom:7px;gap:4px}.skillContent b{font-size:13px}.skillContent small{font-size:9px;min-height:24px}.skillContent em{font-size:10px;padding:6px}.dashboardLearn{margin-top:11px;padding-top:9px}.dashboardLearnTitle{font-size:8px;letter-spacing:1.4px;gap:7px;margin-bottom:6px}.dashboardLearnCard{height:52px;min-height:52px;border-radius:12px;padding:8px 10px}.dashboardLearnCard .dashboardActionText{font-size:11px}.dashboardLearnCard small{font-size:7px}.dashboardOther{margin-top:11px;padding-top:10px}.dashboardOtherTitle{font-size:9px;letter-spacing:1.5px;gap:7px;margin-bottom:7px}.dashboardOtherSubtitle{font-size:8px;margin:-2px 0 7px}.dashboardActions{gap:6px}.dashboardActionCard{height:52px;min-height:52px;border-radius:12px;padding:8px 10px}.dashboardActionText{font-size:10px}.dashboardActionCard small{font-size:7px;margin:0}.dashboardFooter{display:none}.dashboardCompetition{margin-top:11px;padding-top:9px}.dashboardCompetitionTitle{font-size:8px;letter-spacing:1.4px;gap:7px;margin-bottom:6px}.competitionAccess{min-height:52px;padding:8px 10px;border-radius:12px}.competitionAccess .competitionIcon{font-size:21px}.competitionAccess strong{font-size:12px}.competitionAccess small{font-size:7px}.competitionPanel .competitionMessage{padding:16px 13px}.competitionPanel .competitionMessage p{font-size:12px;line-height:1.5}.competitionPanel .competitionIconLarge{font-size:36px}.competitionSupportTitle{font-size:10px;letter-spacing:.9px}}
 
 /* Ajuste final de jerarquía y distribución visual */
-#topSpectrumMini{z-index:20;}
+#topSpectrumMini{z-index:19;}
 .spectrumBadge{z-index:20;}
 #spectrumCanvas{z-index:17;}
-.textGuidePanel.liveTextGuide{z-index:24;}
+.textGuidePanel.liveTextGuide{z-index:21;}
 .xpresiaDashboard{
   top:52px !important;
   bottom:calc(max(8px, env(safe-area-inset-bottom)) + 46px) !important;
@@ -161,6 +161,12 @@ body{min-height:100dvh}video{display:none}canvas{position:fixed;inset:0;width:10
     max-height:none !important;
     aspect-ratio:auto !important;
   }
+}
+
+/* Ajuste de escenario y texto: el texto se apoya en el borde superior de la imagen y el espectro queda inmediatamente encima. */
+#topSpectrumMini{pointer-events:none;}
+.textGuidePanel.liveTextGuide{
+  box-sizing:border-box;
 }
 </style>
 </head>
@@ -393,19 +399,20 @@ function drawSpectrum(){
   guidePanel.style.width=Math.max(160,guideWidth)+'px';
   guidePanel.style.maxHeight=guideHeight+'px';
   guidePanel.style.top='auto';
-  const menuBar=document.getElementById('bottom'),menuRect=menuBar?.getBoundingClientRect();
-  const menuMargin=Math.max(7,Math.round(innerWidth*.0075));
-  // El texto queda entre el panel superior y la imagen/cámara.
-  // Su borde inferior se alinea con el borde superior de la imagen, dejando un pequeño margen.
+  const menuBar=document.getElementById('bottom');
   const stageTop=stage.y;
-  const guideGap=Math.max(7,Math.round(innerWidth*.0075));
+  const guideGap=Math.max(4,Math.round(innerWidth*.004));
+  // El texto queda encuadrado en el borde superior de la imagen/cámara.
+  // El pequeño margen superior ya lo aporta el propio escenario respecto de la cabecera.
   guidePanel.style.bottom='auto';
-  guidePanel.style.top=Math.max(8,stageTop-guidePanel.offsetHeight-guideGap)+'px';
+  guidePanel.style.top=Math.round(stageTop)+'px';
   const textSkill=category==='sing'||category==='acting'||category==='reading';
   const shouldShowGuide=!!(evalRunning&&textSkill&&textSource!=='none');
   guidePanel.style.display=shouldShowGuide?'block':'none';
   const guideRect=guidePanel.getBoundingClientRect();
-  const miniTop=shouldShowGuide?Math.max(stage.y+4,Math.min(stage.y+stage.h-miniH-4,stage.y+4)):Math.max(stage.y+4,stage.y+stage.h-miniH-4);
+  const miniTop=shouldShowGuide
+    ? Math.max(4, Math.round(guideRect.top-miniH-guideGap))
+    : Math.max(stage.y+4, stage.y+stage.h-miniH-4);
   const miniW=Math.min(innerWidth<700?280:Math.min(437,stage.w*.575),Math.max(160,innerWidth-24));
   mini.style.left='50%';
   mini.style.top=Math.round(miniTop)+'px';
@@ -597,6 +604,7 @@ async function prepareResultImage(r){const blob=await buildResultImage(r);if(!bl
 function downloadRecordedVideo(){if(!recordedBlob||!recordedUrl){setTop('El video todavía no está disponible.');return}const ext=recordedBlob.type.includes('mp4')?'mp4':'webm';const a=document.createElement('a');a.href=recordedUrl;a.download=`Xpresia_evaluacion_${Math.round(compute()?.score||0)}.${ext}`;document.body.appendChild(a);a.click();a.remove()}
 function downloadResultImage(){if(!resultImageBlob||!resultImageUrl)return;const a=document.createElement('a');a.href=resultImageUrl;a.download=`Xpresia_resultado_${Math.round(compute()?.score||0)}.png`;document.body.appendChild(a);a.click();a.remove()}
 async function initCamera(){if(initPromise)return initPromise;if(stream&&stream.active)return;initPromise=(async()=>{try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});video.srcObject=stream;await video.play();resize();cameraReady=true;updateEvaluationModeUI()}catch(e){console.error(e);activation.querySelector('.startHint').textContent='No se pudo acceder a la cámara. Revisa los permisos y toca aquí para reintentar.'}finally{initPromise=null}})();return initPromise}
+function stopCamera(){try{if(stream){stream.getTracks().forEach(t=>t.stop())}}catch(e){}stream=null;cameraReady=false;try{video.pause()}catch(e){}try{video.srcObject=null}catch(e){}updateEvaluationModeUI()}
 async function setMicrophoneEnabled(enabled){
   if(!enabled){
     micEnabled=false;
@@ -1085,6 +1093,40 @@ async function countdownStart(){if(countdown||evalRunning)return;userName=(docum
   countdown=true;closePanels();const box=document.getElementById('countdown'),title=document.getElementById('countdownTitle'),text=document.getElementById('countdownText');box.style.display='flex';title.textContent=soloVoice?'Prepárate para usar tu voz.':'Prepárate, ahora evaluaremos tu desempeño.';text.textContent='';await new Promise(r=>setTimeout(r,1800));title.textContent='Evaluando en';for(const n of [3,2,1]){text.textContent=n;await new Promise(r=>setTimeout(r,700))}title.textContent='¡Comenzamos!';text.textContent='';await new Promise(r=>setTimeout(r,450));box.style.display='none';countdown=false;startEvaluation()}
 async function startEvaluation(){const soloVoice=(category==='sing'||category==='reading')&&evaluationMode==='voice';if(!soloVoice&&!poseReady){setTop('El detector corporal todavía no está listo.');return}resetScore();duration=+document.getElementById('duration').value;if(category==='reading'&&textSource!=='none')setReadingPassageForDuration(duration>0?duration:30);if((category==='sing'||category==='acting'||category==='reading')&&textSource!=='none')renderGuideText(category,duration>0?duration:60);if(!soloVoice)startVideoRecording();evalRunning=true;const liveGuide=document.getElementById('liveTextGuidePanel');if(liveGuide){liveGuide.classList.add('liveTextGuide');liveGuide.style.display=(category==='sing'||category==='acting'||category==='reading')&&textSource!=='none'?'block':'none'}updateEvaluationModeUI();startGuidePlayback();if(soloVoice){if(voiceSamplingId)clearInterval(voiceSamplingId);voiceSamplingId=setInterval(()=>{if(evalRunning&&!evalPaused)sampleVoice()},100)}if(category==='reading'&&micEnabled)startReadingRecognition();if(selectedMusic.url){startBackgroundMusic();startRecordingMusic()}evalPaused=false;startTime=performance.now();elapsedBeforePause=0;setTop('Evaluando: '+profiles[category].name+(category==='imitation'?' · '+(document.getElementById('imitationType')?.selectedOptions?.[0]?.textContent||'Desafío') :''));document.getElementById('start').textContent='Evaluación en curso';document.getElementById('start').disabled=true;document.getElementById('pause').style.display='block';document.getElementById('finish').style.display='block';document.getElementById('topEvalControls').style.display='flex';document.getElementById('pauseTopBtn').textContent='⏸';document.getElementById('topTimer').style.display='inline';document.getElementById('topTimer').textContent=duration>0?formatTime(duration):'00:00';updateLiveMusicControls();startEvaluationTimer();if(poseReady===false)loadPose()}
 function pauseEvaluation(){if(!evalRunning)return;if(!evalPaused){elapsedBeforePause=currentElapsed();evalPaused=true;if(mediaRecorder&&mediaRecorder.state==='recording'&&mediaRecorder.pause)mediaRecorder.pause();if(selectedMusic.url){musicPlayer.pause();recordMusicPlayer.pause();if(recordMusicGain)recordMusicGain.gain.value=0}setTop('Evaluación pausada')}else{startTime=performance.now();evalPaused=false;if(duration>0){if(evalFinishGuardId)clearTimeout(evalFinishGuardId);evalFinishGuardId=setTimeout(()=>{if(evalRunning&&!evalPaused&&currentElapsed()>=duration)finishEvaluation(true)},Math.max(250,duration*1000-currentElapsed()*1000+500))}if(mediaRecorder&&mediaRecorder.state==='paused'&&mediaRecorder.resume)mediaRecorder.resume();if(selectedMusic.url){startBackgroundMusic();if(recordMusicGain)recordMusicGain.gain.value=volumeLevel;const p=recordMusicPlayer.play();if(p)p.catch(()=>{})}setTop('Evaluando: '+profiles[category].name)}document.getElementById('pause').textContent=evalPaused?'Continuar evaluación':'Pausar evaluación';document.getElementById('pauseTopBtn').textContent=evalPaused?'▶':'⏸';updateLiveMusicControls();}
+function resetAppAfterEvaluation(){
+  // Limpieza total de una evaluación terminada: evita que cámara, habilidad o texto
+  // de la sesión anterior queden activos al comenzar la siguiente.
+  stopCamera();
+  stopReadingRecognition();
+  hideGuideText();
+  evalRunning=false; evalPaused=false; countdown=false; evaluationMode='camera';
+  category='dance'; categoryChosen=false; textSource='sample'; customEvaluationText=''; imitationType='airguitar';
+  selectedMusic={id:'none',name:'Sin música de fondo',url:'',objectUrl:false};
+  pendingMusic={...selectedMusic};
+  const name=document.getElementById('userName'); if(name)name.value='';
+  const cat=document.getElementById('category'); if(cat)cat.value='dance';
+  const dur=document.getElementById('duration'); if(dur)dur.value='60';
+  const textSel=document.getElementById('textSourceSelect'); if(textSel)textSel.value='sample';
+  const custom=document.getElementById('customText'); if(custom)custom.value='';
+  const count=document.getElementById('customTextCount'); if(count)count.textContent='0 / 3000';
+  const voice=document.getElementById('voiceEvaluation'); if(voice)voice.style.display='none';
+  const modeChooser=document.getElementById('evalModeChooser'); if(modeChooser)modeChooser.classList.remove('visible');
+  // No usamos resetScore() aquí porque ese método libera la imagen de resultado que
+  // puede seguir visible mientras el usuario la comparte/guarda. Limpiamos solo el
+  // estado de la próxima evaluación y conservamos el resultado actual.
+  resetReading();
+  samples=[]; prev={}; prevDir={}; directionChanges=0; lastEnergy=0;
+  voiceSamples=[]; voicePitchHistory=[]; voiceRmsHistory=[]; lastVoiceSampleAt=0; lastVoiceAnalysisAt=0; voiceScoreCache=null;
+  ['Pitch','PitchStability','Dynamics','VoicePresence'].forEach(x=>setVoiceMetric(x,0));
+  document.getElementById('score').textContent='--';
+  ['Activity','Coordination','Fluidity','Stability','Variety'].forEach(x=>setMetric(x,0));
+  document.getElementById('topScore').style.display='none';
+  document.getElementById('topTimer').style.display='none';
+  updateDescription(); updateTextConfigUI(); updateEvaluationModeUI();
+  closePanels();
+  setTop('Bienvenidos a Xpresia');
+}
+
 async function finishEvaluation(auto=false){
   if(!evalRunning||evalFinishing)return;
   if(!auto){openStopConfirm();return}
@@ -1130,6 +1172,9 @@ async function finishEvaluation(auto=false){
   try{await showFinal(r,auto)}catch(e){console.error('Error mostrando resultado:',e);setTop('Evaluación completada.');}
   try{if(mediaRecorder&&mediaRecorder.state!=='inactive')await stopVideoRecording()}catch(e){console.warn('Error al cerrar la grabación:',e)}
   try{if(micStream||micEnabled)await setMicrophoneEnabled(false)}catch(e){console.warn('Error al cerrar el micrófono:',e)}
+  // La evaluación queda cerrada y los recursos de cámara liberados. La pantalla de
+  // resultado puede seguir visible, pero la próxima evaluación parte de una configuración limpia.
+  resetAppAfterEvaluation();
   evalFinishing=false;
 }
 function openStopConfirm(){document.getElementById('stopConfirm').style.display='flex'}
@@ -1159,7 +1204,7 @@ document.getElementById('finalShareChoice').onclick=()=>openResultPanel('share')
 document.getElementById('shareImageBtn').onclick=()=>nativeShare('image');document.getElementById('viewVideoBtn').onclick=()=>openResultPanel('video');document.getElementById('saveVideoBtn').onclick=downloadRecordedVideo;
 document.getElementById('nativeShare').onclick=nativeShare;document.getElementById('closeShare').onclick=closeSharePanel;document.getElementById('closeVideo').onclick=closeVideoPanel;document.getElementById('closeSharePopup').onclick=closeSharePopup;
 document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>platformShare(b.dataset.share));
-document.getElementById('finalClose').onclick=()=>{closeResultPanels();document.getElementById('final').style.display='none';};
+document.getElementById('finalClose').onclick=()=>{closeResultPanels();document.getElementById('final').style.display='none';openPanel('mainMenu');};
 function animateScore(target){const el=document.getElementById('finalScore');const start=performance.now();const dur=1100;function tick(now){const t=Math.min(1,(now-start)/dur);const eased=1-Math.pow(1-t,3);el.textContent=Math.round(target*eased);if(t<1)requestAnimationFrame(tick)}requestAnimationFrame(tick)}
 function celebrate(){const box=document.getElementById('celebration');box.innerHTML='<div class="celebrationBurst">🎉</div>';box.style.display='block';const pieces=['#ff3b81','#00e5ff','#ffd166','#7cff6b','#b36bff','#ff8c42','#ffffff'];for(let i=0;i<72;i++){const c=document.createElement('div');c.className='confetti';const angle=Math.random()*Math.PI*2,distance=18+Math.random()*58;c.style.left='50vw';c.style.top='42vh';c.style.background=pieces[Math.floor(Math.random()*pieces.length)];c.style.width=(6+Math.random()*7)+'px';c.style.height=(9+Math.random()*12)+'px';c.style.setProperty('--dx',Math.cos(angle)*distance+'vw');c.style.setProperty('--dy',Math.sin(angle)*distance+'vh');c.style.animationDuration=(1.8+Math.random()*1.8)+'s';c.style.animationDelay=(Math.random()*.15)+'s';c.style.transform='rotate('+Math.random()*360+'deg)';box.appendChild(c)}setTimeout(()=>{box.style.display='none';box.innerHTML=''},3900)}
 document.querySelectorAll('.skillCard,.secondarySkills button[data-category]').forEach(btn=>btn.onclick=()=>{if(evalRunning)return;category=btn.dataset.category;categoryChosen=true;const sel=document.getElementById('category');if(sel)sel.value=category;evaluationMode='camera';updateDescription();resetScore();const v=document.getElementById('voiceEvaluation');if(v)v.style.display=category==='sing'?'block':'none';updateTextConfigUI();updateEvaluationModeUI();openPanel('evaluationPanel');hideGuideText();setMicrophoneEnabled(true).catch(e=>console.warn('Micrófono:',e));});document.getElementById('learnAccess').onclick=()=>openPanel('learningPanel');document.getElementById('contactAccess').onclick=()=>openPanel('contactPanel');document.getElementById('collabAccess').onclick=()=>openPanel('collabPanel');document.getElementById('competitionAccess').onclick=()=>openPanel('competitionPanel');
