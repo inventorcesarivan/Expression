@@ -112,6 +112,7 @@ body{min-height:100dvh}video{display:none}canvas{position:fixed;inset:0;width:10
 .voiceEvaluation{display:none;margin-top:12px;padding:13px;border:1px solid rgba(255,0,255,.48);border-radius:17px;background:linear-gradient(145deg,rgba(35,5,54,.72),rgba(6,13,31,.94));box-shadow:0 0 15px rgba(255,0,255,.10),inset 0 0 18px rgba(255,0,255,.035)}.voiceHeader{text-align:center;color:#ff8dff;font-weight:900;letter-spacing:1px}.voiceHeader small{display:block;margin-top:4px;color:#bfefff;font-size:10px;letter-spacing:.2px;font-weight:500}.voiceMetrics{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px}.voiceMetrics>div{padding:8px 5px;border:1px solid rgba(0,229,255,.24);border-radius:11px;background:rgba(0,0,0,.22);text-align:center}.voiceMetrics span{display:block;font-size:9px;color:#bfefff;line-height:1.2}.voiceMetrics b{display:block;margin-top:3px;font-size:15px;color:#fff;text-shadow:0 0 8px rgba(0,229,255,.4)}.voiceEvaluation p{margin:9px 0 0;text-align:center;font-size:10px;color:#dffcff;line-height:1.35}@media(max-width:700px){.voiceMetrics{grid-template-columns:repeat(2,1fr)}}
 
 .readingPanel{display:none;margin-top:12px;padding:14px;border:1px solid rgba(0,229,255,.42);border-radius:17px;background:linear-gradient(145deg,rgba(3,18,39,.88),rgba(10,4,24,.92));box-shadow:0 0 18px rgba(0,229,255,.08),inset 0 0 18px rgba(0,229,255,.03)}
+.textConfigPanel{display:none}.textConfigPanel>label{display:block;margin:12px 0 7px;text-align:center;color:#8feeff;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px}.textConfigPanel select{width:100%;padding:10px;border-radius:10px;background:#102a55;color:#fff;border:1px solid #00e5ff;color-scheme:dark}.textConfigPanel select option{background:#102a55;color:#fff}.textConfigPanel select option:checked{background:#35115d;color:#fff}.customTextWrap{display:none;position:relative;margin-top:10px}.customTextWrap.show{display:block}.customTextWrap textarea{display:block;width:100%;min-height:120px;resize:vertical;padding:12px;border:1px solid rgba(0,229,255,.55);border-radius:12px;background:#050815;color:#fff;font:14px/1.55 Arial,sans-serif;outline:none}.customTextWrap textarea:focus{border-color:#ff00df;box-shadow:0 0 14px rgba(255,0,223,.16)}.customTextCount{text-align:right;margin-top:4px;color:#8feeff;font-size:9px}
 .readingHeader{text-align:center;color:#8ff7ff;font-weight:900;letter-spacing:1px}.readingHeader small{display:block;margin-top:4px;color:#bfefff;font-size:10px;letter-spacing:.2px;font-weight:500}
 .readingText{margin-top:10px;padding:13px;border:1px solid rgba(255,0,255,.28);border-radius:13px;background:#050505;color:#fff;font-size:15px;line-height:1.6;text-align:left;box-shadow:inset 0 0 14px rgba(255,0,255,.035)}
 .readingText b{color:#ff8dff}.readingStatus{text-align:center;margin:9px 0 0;color:#dffcff;font-size:10px;line-height:1.4}
@@ -203,7 +204,7 @@ body{min-height:100dvh}video{display:none}canvas{position:fixed;inset:0;width:10
 <button class="evalModeCard cameraMode active" id="cameraModeBtn" type="button"><span class="evalModeIcon">📷</span><strong>Con cámara</strong><small>Voz + expresión corporal</small></button>
 <button class="evalModeCard voiceMode" id="voiceModeBtn" type="button"><span class="evalModeIcon">🎙️</span><strong>Solo micrófono</strong><small>Solo voz / narración · sin cámara</small></button>
 </div>
-<div class="readingPanel" id="readingPanel"><div class="readingHeader">📖 LECTURA DE TEXTOS</div><small>Lee el texto en voz alta con naturalidad y expresión.</small><div class="readingText" id="readingText">La expresión no está solamente en las palabras. También vive en la voz, en las pausas, en la intención y en la manera en que comunicamos una idea. Lee este texto como si quisieras que otra persona realmente sintiera lo que estás diciendo.</div><p class="readingStatus" id="readingStatus">Para esta habilidad se necesita el micrófono. Si el navegador lo permite, Xpresia comparará tu lectura con el texto.</p><div class="readingMetrics"><div><span>Texto leído</span><b id="mReadAccuracy">--</b></div><div><span>Fluidez</span><b id="mReadFluency">--</b></div><div><span>Pausas</span><b id="mReadPauses">--</b></div><div><span>Expresión vocal</span><b id="mReadVoice">--</b></div></div></div>
+<div class="readingPanel textConfigPanel" id="readingPanel"><div class="readingHeader" id="textConfigHeader">📝 TEXTO PARA LA EVALUACIÓN</div><small>Elige un texto de ejemplo o escribe/pega el que quieras utilizar.</small><label for="textSourceSelect">Origen del texto</label><select id="textSourceSelect"><option value="sample" selected>Texto de ejemplo</option><option value="custom">Agrega tu propio texto</option><option value="none">Sin texto en pantalla</option></select><div id="customTextWrap" class="customTextWrap"><textarea id="customText" maxlength="3000" placeholder="Escribe o pega aquí tu texto..."></textarea><div class="customTextCount" id="customTextCount">0 / 3000</div></div><p class="readingStatus" id="readingStatus">El texto aparecerá al iniciar la evaluación solo si eliges mostrarlo.</p></div>
 
 <div class="menuSection mediaModeSection"><button class="modeCard musicModeCard heartbeat" id="musicAccess" type="button"><span class="modeIcon">🎵</span><span class="modeText"><strong>Evaluar con música de fondo</strong><small>Movimiento + presencia · Recomendado</small></span><span class="modeArrow">›</span></button><p class="hint modeStatus" id="musicSelectedStatus">Sin música de fondo seleccionada.</p></div>
 <div class="menuSection audioControls"><div class="audioRow volumeRow"><label>🔊 Volumen de la música</label><input id="volumeSlider" type="range" min="0" max="1" step="0.05" value="0.8"><span class="volumeValue" id="volumeValue">80%</span></div></div><div class="voiceEvaluation" id="voiceEvaluation"><div class="voiceHeader"><span>🎤 ANÁLISIS VOCAL INTELIGENTE</span><small>Afinación, estabilidad, dinámica y presencia de la voz</small></div><div class="voiceMetrics"><div><span>Afinación</span><b id="mPitch">--</b></div><div><span>Estabilidad</span><b id="mPitchStability">--</b></div><div><span>Dinámica</span><b id="mDynamics">--</b></div><div><span>Presencia vocal</span><b id="mVoicePresence">--</b></div></div><p id="voiceHint">El micrófono se activa automáticamente para analizar tu voz.</p></div>
@@ -351,8 +352,11 @@ let samples=[],prev={},prevDir={},directionChanges=0,lastEnergy=0,evalRunning=fa
 let voiceSamples=[],voicePitchHistory=[],voiceRmsHistory=[],lastVoiceSampleAt=0,lastVoiceAnalysisAt=0,voiceScoreCache=null;
 let readingRecognition=null,readingTranscript='',readingFinalText='',readingStartedAt=0,readingLastSpeechAt=0,readingPauseCount=0,readingRecognitionSupported=false;
 let guideTextWords=[],guideTextType='',guideTextTimer=null,guideTextLineTimer=null,guideTextCurrent=0;
+let textSource='sample',customEvaluationText='';
+const SAMPLE_SING_TEXT='Aquí me pongo a cantar, al compás de la vigüela, que el hombre que lo desvela una pena extraordinaria, como la ave solitaria, con el cantar se consuela.';
+const SAMPLE_READING_TEXT='La expresión no está solamente en las palabras. También vive en la voz, en las pausas, en la intención y en la manera en que comunicamos una idea. Lee este texto como si quisieras que otra persona realmente sintiera lo que estás diciendo.';
 const HISTORY_DB='XpresiaEvaluationsDB',HISTORY_STORE='evaluations',MAX_SAVED_EVALUATIONS=10;
-function resize(){const w=video.videoWidth||innerWidth,h=video.videoHeight||innerHeight;if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}if(spectrumCanvas.width!==innerWidth*devicePixelRatio||spectrumCanvas.height!==innerHeight*devicePixelRatio){spectrumCanvas.width=Math.max(1,Math.floor(innerWidth*devicePixelRatio));spectrumCanvas.height=Math.max(1,Math.floor(innerHeight*devicePixelRatio));spectrumCtx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}}
+function resize(){const w=Math.max(1,Math.floor(innerWidth)),h=Math.max(1,Math.floor(innerHeight));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}if(spectrumCanvas.width!==innerWidth*devicePixelRatio||spectrumCanvas.height!==innerHeight*devicePixelRatio){spectrumCanvas.width=Math.max(1,Math.floor(innerWidth*devicePixelRatio));spectrumCanvas.height=Math.max(1,Math.floor(innerHeight*devicePixelRatio));spectrumCtx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}}
 function spectrumVisible(){return document.getElementById('activation')?.style.display==='none'}
 function getStageScreenRect(){
   const isMobile=innerWidth<700, margin=8;
@@ -391,9 +395,11 @@ function drawSpectrum(){
   const menuMargin=Math.max(7,Math.round(innerWidth*.0075));
   const targetBottom=menuRect&&menuRect.width>0?menuRect.top-menuMargin:innerHeight-8;
   guidePanel.style.bottom=Math.max(0,innerHeight-targetBottom)+'px';
-  guidePanel.style.display='block';
+  const textSkill=category==='sing'||category==='acting'||category==='reading';
+  const shouldShowGuide=!!(evalRunning&&textSkill&&textSource!=='none');
+  guidePanel.style.display=shouldShowGuide?'block':'none';
   const guideRect=guidePanel.getBoundingClientRect();
-  const miniTop=Math.max(stage.y+4,guideRect.top-miniGap-miniH);
+  const miniTop=shouldShowGuide?Math.max(stage.y+4,guideRect.top-miniGap-miniH):Math.max(stage.y+4,stage.y+stage.h-miniH-4);
   const miniW=Math.min(innerWidth<700?280:Math.min(437,stage.w*.575),Math.max(160,innerWidth-24));
   mini.style.left='50%';
   mini.style.top=Math.round(miniTop)+'px';
@@ -421,7 +427,7 @@ function drawSpectrum(){
 
 function spectrumLoop(){updateMicNoiseFloor();drawSpectrum();requestAnimationFrame(spectrumLoop)}
 function draw(){resize();ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#050b18';ctx.fillRect(0,0,canvas.width,canvas.height);const g=getCameraRect();if(video.readyState>=2&&video.videoWidth){const s=Math.min(g.w/video.videoWidth,g.h/video.videoHeight),dw=video.videoWidth*s,dh=video.videoHeight*s;const ox=g.x+(g.w-dw)/2,oy=g.y+(g.h-dh)/2;ctx.save();ctx.beginPath();ctx.rect(g.x,g.y,g.w,g.h);ctx.clip();if(mirror){ctx.translate(ox+dw,oy);ctx.scale(-1,1);ctx.drawImage(video,0,0,dw,dh)}else ctx.drawImage(video,ox,oy,dw,dh);ctx.restore()}requestAnimationFrame(draw)}
-function getCameraRect(){const isMobile=innerWidth<700,margin=8;const topEl=document.getElementById('top'),bottomEl=document.getElementById('bottom');const tr=topEl?.getBoundingClientRect(),br=bottomEl?.getBoundingClientRect();const top=Math.max(8,(tr?.bottom||46)+margin),bottom=Math.min(innerHeight-8,(br?.top||innerHeight-50)-margin);const side=8;const availW=Math.max(240,innerWidth-side*2),availH=Math.max(150,innerHeight-top-bottom);const maxW=isMobile?availW:Math.min(760,availW);let w=maxW,h=Math.floor(w*9/16);if(h>availH){h=availH;w=Math.floor(h*16/9);w=Math.min(w,maxW);h=Math.floor(w*9/16)}const sx=innerWidth?canvas.width/innerWidth:1,sy=innerHeight?canvas.height/innerHeight:1;return{x:Math.round((innerWidth-w)/2*sx),y:Math.round(top*sy),w:Math.round(w*sx),h:Math.round(h*sy)}}
+function getCameraRect(){return getStageScreenRect()}
 function getRecordingMime(){const options=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];return options.find(x=>window.MediaRecorder&&MediaRecorder.isTypeSupported(x))||''}
 function ensureAudioForMusicSync(){
   if(!selectedMusic.url)return false;
@@ -643,7 +649,7 @@ async function saveMusicSelection(){if(pendingMusic.id==='custom'&&!pendingMusic
 document.getElementById('cameraModeBtn').onclick=()=>setEvaluationMode('camera');document.getElementById('voiceModeBtn').onclick=()=>setEvaluationMode('voice');document.getElementById('musicAccess').onclick=openMusicPanel;document.getElementById('cancelMusic').onclick=cancelMusicPanel;document.getElementById('saveMusic').onclick=saveMusicSelection;document.getElementById('musicLinkTest').onclick=prepareUrlMusic;document.getElementById('musicSelect').onchange=e=>{const id=e.target.value;document.getElementById('musicFileWrap').style.display=id==='custom'?'block':'none';document.getElementById('musicUrlWrap').style.display=id==='url'?'block':'none';if(id==='none'){pendingMusic={id:'none',name:'Sin música de fondo',url:'',objectUrl:false};previewMusic(pendingMusic);return}if(id==='custom'){pendingMusic={id:'custom',name:'Mi música',url:'',objectUrl:true};setMusicStatus('Selecciona un archivo de audio para escucharlo.');return}if(id==='url'){pendingMusic={id:'url',name:'Base desde enlace',url:'',sourceUrl:'',objectUrl:false};setMusicStatus('Pega un enlace directo a un archivo de audio y pulsa “Probar enlace”.');return}const item=musicLibrary[id];pendingMusic={id,name:item.name,url:item.url,objectUrl:false};previewMusic(pendingMusic)};updateMusicSelectedStatus();document.getElementById('musicFile').onchange=e=>{const file=e.target.files?.[0];if(!file)return;if(pendingMusicObjectUrl)URL.revokeObjectURL(pendingMusicObjectUrl);pendingMusicObjectUrl=URL.createObjectURL(file);pendingMusic={id:'custom',name:file.name,url:pendingMusicObjectUrl,objectUrl:true};previewMusic(pendingMusic)};document.getElementById('musicUrl').onchange=()=>{if(document.getElementById('musicUrl').value.trim())prepareUrlMusic()};
 
 let activationOpening=false;
-function enterXpresia(e){if(e){e.preventDefault();e.stopPropagation()}if(activationOpening)return;activationOpening=true;activation.style.display='none';categoryChosen=false;updateEvaluationModeUI();renderGuideText('reading',duration||60);openPanel('mainMenu');setTop('Bienvenidos a Xpresia');setTimeout(()=>{activationOpening=false},250)}
+function enterXpresia(e){if(e){e.preventDefault();e.stopPropagation()}if(activationOpening)return;activationOpening=true;activation.style.display='none';categoryChosen=false;hideGuideText();updateEvaluationModeUI();openPanel('mainMenu');setTop('Bienvenidos a Xpresia');setTimeout(()=>{activationOpening=false},250)}
 activation.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation()},{passive:false});
 activation.addEventListener('pointerup',enterXpresia,{passive:false});
 activation.addEventListener('click',enterXpresia,{passive:false});
@@ -697,16 +703,38 @@ function positionVisualStage(){
 function updateLiveGuideVisibility(){
   const guide=document.getElementById('liveTextGuidePanel');
   if(!guide)return;
-  const show=categoryChosen?true:true;
-  if(show){
-    if(!guideTextType)renderGuideText(category==='sing'||category==='acting'||category==='reading'?category:'reading',duration||60);
+  const textSkill=category==='sing'||category==='acting'||category==='reading';
+  const shouldShow=!!(evalRunning&&textSkill&&textSource!=='none');
+  if(shouldShow){
+    if(!guideTextType)renderGuideText(category,duration||60);
     guide.style.display='block';
+  }else{
+    guide.style.display='none';
   }
 }
 
 function setEvaluationMode(mode){if(evalRunning)return;if((category!=='sing'&&category!=='reading')&&mode==='voice')return;evaluationMode=mode;updateEvaluationModeUI();resetScore();}
-function updateGuidePanel(){const show=category==='sing'||category==='acting'||category==='reading';const p=document.getElementById('textGuidePanel');if(!show){hideGuideText();return}renderGuideText(category,duration||60)}
-document.getElementById('category').onchange=e=>{if(!evalRunning){category=e.target.value;categoryChosen=true;evaluationMode='camera';updateDescription();resetScore();const v=document.getElementById('voiceEvaluation');if(v)v.style.display=category==='sing'?'block':'none';const rp=document.getElementById('readingPanel');if(rp)rp.style.display=category==='reading'?'block':'none';updateEvaluationModeUI();updateGuidePanel()}};updateDescription();document.getElementById('voiceEvaluation').style.display=category==='sing'?'block':'none';document.getElementById('readingPanel').style.display=category==='reading'?'block':'none';updateEvaluationModeUI();renderGuideText('reading',duration||60);updateGuidePanel();
+function updateGuidePanel(){const show=category==='sing'||category==='acting'||category==='reading';const p=document.getElementById('textGuidePanel');if(!show||!evalRunning||textSource==='none'){hideGuideText();return}renderGuideText(category,duration||60)}
+function updateTextConfigUI(){
+  const panel=document.getElementById('readingPanel');
+  const selector=document.getElementById('textSourceSelect');
+  const wrap=document.getElementById('customTextWrap');
+  const area=document.getElementById('customText');
+  const count=document.getElementById('customTextCount');
+  const show=category==='sing'||category==='reading'||category==='acting';
+  if(panel)panel.style.display=show?'block':'none';
+  if(selector)selector.value=textSource;
+  if(wrap)wrap.classList.toggle('show',show&&textSource==='custom');
+  if(area&&area.value!==customEvaluationText)area.value=customEvaluationText;
+  if(count)count.textContent=(customEvaluationText.length)+' / 3000';
+  const header=document.getElementById('textConfigHeader');
+  if(header)header.textContent=category==='reading'?'📖 TEXTO PARA LECTURA':'🎤 TEXTO PARA CANTO';
+}
+const textSourceSelect=document.getElementById('textSourceSelect');
+if(textSourceSelect)textSourceSelect.onchange=e=>{textSource=e.target.value;updateTextConfigUI();};
+const customTextInput=document.getElementById('customText');
+if(customTextInput)customTextInput.oninput=e=>{customEvaluationText=e.target.value;const c=document.getElementById('customTextCount');if(c)c.textContent=customEvaluationText.length+' / 3000';};
+document.getElementById('category').onchange=e=>{if(!evalRunning){category=e.target.value;categoryChosen=true;evaluationMode='camera';updateDescription();resetScore();const v=document.getElementById('voiceEvaluation');if(v)v.style.display=category==='sing'?'block':'none';updateTextConfigUI();updateEvaluationModeUI();updateGuidePanel()}};updateDescription();document.getElementById('voiceEvaluation').style.display=category==='sing'?'block':'none';updateTextConfigUI();updateEvaluationModeUI();hideGuideText();
 function loadPose(){if(poseReady||pose)return;if(typeof Pose==='undefined'){setTop('Cargando detector corporal…');if(window.poseLoading)return;window.poseLoading=true;const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js';s.onload=()=>{window.poseLoading=false;loadPose()};s.onerror=()=>{window.poseLoading=false;setTop('No se pudo cargar el detector corporal')};document.head.appendChild(s);return}pose=new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`});pose.setOptions({modelComplexity:0,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:.35,minTrackingConfidence:.35});pose.onResults(onPose);poseReady=true;setTop('Detector corporal listo')}
 function waitForPoseReady(timeout=8000){return new Promise(resolve=>{const started=performance.now();const check=()=>{if(poseReady){resolve(true);return}if(performance.now()-started>=timeout){resolve(false);return}setTimeout(check,100)};check()})}
 function onPose(res){poseBusy=false;if(!evalRunning||evalPaused||!res.poseLandmarks)return;sample(res.poseLandmarks)}
@@ -864,15 +892,17 @@ function guideSourceFor(type){
   return '';
 }
 function guideTextFor(type,sec){
-  if(type==='reading')return getReadingPassageForDuration(sec);
-  if(type==='sing')return 'Aquí me pongo a cantar, al compás de la vigüela, que el hombre que lo desvela una pena extraordinaria, como la ave solitaria, con el cantar se consuela.';
+  if(type==='reading')return getConfiguredText('reading',sec);
+  if(type==='sing')return getConfiguredText('sing',sec);
   if(type==='acting')return 'Es verdad; pues reprimamos esta fiera condición, esta furia, esta ambición, por si alguna vez soñamos. Y sí haremos, pues estamos en mundo tan singular, que el vivir sólo es soñar; y la experiencia me enseña que el hombre que vive sueña lo que es, hasta despertar.';
   return '';
 }
 function clearGuideTimers(){if(guideTextTimer){clearInterval(guideTextTimer);guideTextTimer=null}if(guideTextLineTimer){clearInterval(guideTextLineTimer);guideTextLineTimer=null}guideTextCurrent=0}
 function renderGuideText(type,sec){
+  if(!evalRunning||textSource==='none'||!['reading','sing','acting'].includes(type)){hideGuideText();return}
   const content=type==='reading'?guideTextFor('reading',sec):type==='acting'?guideTextFor('acting',sec):guideTextFor('sing',sec);
-  const meta=type==='reading'?'Lectura · texto de muestra':type==='acting'?'Actuación · fragmento teatral':'Canto · texto de muestra';
+  const isCustomText=textSource==='custom'&&customEvaluationText.trim();
+  const meta=type==='reading'?(isCustomText?'Lectura · texto personalizado':'Lectura · texto de muestra'):type==='acting'?'Actuación · fragmento teatral':(isCustomText?'Canto · texto personalizado':'Canto · texto de muestra');
   const header=type==='reading'?'📖 TEXTO DE LECTURA':type==='acting'?'🎭 TEXTO DE ACTUACIÓN':'🎤 TEXTO PARA CANTO';
   const subtitle=type==='reading'?'Sigue el texto mientras realizas tu evaluación.':type==='acting'?'Interpreta el fragmento con intención y expresividad.':'Por ahora, texto plano. Próximamente podremos incorporar karaoke.';
   const targets=[
@@ -894,11 +924,11 @@ function renderGuideText(type,sec){
       const parts=content.split(/(\s+)/);let idx=0;
       parts.forEach(part=>{if(/\s+/.test(part)){t.text.appendChild(document.createTextNode(part));return}const span=document.createElement('span');span.className='guideWord';span.dataset.index=idx++;span.textContent=part;t.text.appendChild(span)});
     }
-    t.panel.style.display=(t.panel.id==='liveTextGuidePanel' ? 'block' : 'block');
-    if(t.status)t.status.textContent=type==='reading'?'El resaltado seguirá tu voz cuando el navegador permita reconocimiento de voz.':type==='acting'?'El texto avanzará por fragmentos durante la evaluación.':'Texto de muestra · sin karaoke por ahora.';
+    if(t.panel.id==='liveTextGuidePanel'){t.panel.classList.add('liveTextGuide');t.panel.style.display='block'}else{t.panel.style.display='none'}
+    if(t.status)t.status.textContent=type==='reading'?'El resaltado seguirá tu voz cuando el navegador permita reconocimiento de voz.':type==='acting'?'El texto avanzará por fragmentos durante la evaluación.':(isCustomText?'Texto personalizado · sin karaoke por ahora.':'Texto de muestra · sin karaoke por ahora.');
   });
 }
-function hideGuideText(){clearGuideTimers();const p=document.getElementById('textGuidePanel');if(p){p.style.display='none';p.classList.remove('liveTextGuide')}const live=document.getElementById('liveTextGuidePanel');if(live){live.classList.add('liveTextGuide');live.style.display='block'}guideTextWords=[];guideTextType='';}
+function hideGuideText(){clearGuideTimers();const p=document.getElementById('textGuidePanel');if(p){p.style.display='none';p.classList.remove('liveTextGuide')}const live=document.getElementById('liveTextGuidePanel');if(live){live.classList.add('liveTextGuide');live.style.display='none'}guideTextWords=[];guideTextType='';}
 function highlightReadingFromTranscript(spoken){
   if(guideTextType!=='reading')return;
   const expected=normalizeReadingText(guideTextFor('reading',duration>0?duration:30)).split(' ').filter(Boolean);
@@ -909,7 +939,7 @@ function highlightReadingFromTranscript(spoken){
 }
 function startGuidePlayback(){
   clearGuideTimers();
-  if(!evalRunning)return;
+  if(!evalRunning||textSource==='none')return;
   const text=document.getElementById('textGuideText');
   if(guideTextType==='sing'){return}
   if(guideTextType==='acting'){
@@ -919,9 +949,15 @@ function startGuidePlayback(){
     guideTextLineTimer=setInterval(()=>{els.forEach(e=>e.classList.remove('active'));i++;if(i>=els.length){clearGuideTimers();return}els[i].classList.add('active')},step);
   }
 }
+function getConfiguredText(type,sec){
+  if(textSource==='custom'&&customEvaluationText.trim())return customEvaluationText.trim();
+  if(type==='reading')return getReadingPassageForDuration(sec);
+  if(type==='sing')return SAMPLE_SING_TEXT;
+  return '';
+}
 function setReadingPassageForDuration(sec){
   const el=document.getElementById('readingText');
-  const passage=getReadingPassageForDuration(sec);
+  const passage=getConfiguredText('reading',sec);
   if(el)el.textContent=passage;
   if(guideTextType==='reading')renderGuideText('reading',sec);
 }
@@ -1029,7 +1065,9 @@ function resetReading(){readingTranscript='';readingFinalText='';readingStartedA
 function resetScore(){finalEvaluationResult=null;resetReading();if(!evalRunning)hideGuideText();if(resultImageUrl){URL.revokeObjectURL(resultImageUrl);resultImageUrl=null}resultImageBlob=null;document.getElementById('sharePanel').style.display='none';samples=[];prev={};prevDir={};directionChanges=0;lastEnergy=0;voiceSamples=[];voicePitchHistory=[];voiceRmsHistory=[];lastVoiceSampleAt=0;lastVoiceAnalysisAt=0;voiceScoreCache=null;['Pitch','PitchStability','Dynamics','VoicePresence'].forEach(x=>setVoiceMetric(x,0));document.getElementById('score').textContent='--';['Activity','Coordination','Fluidity','Stability','Variety'].forEach(x=>setMetric(x,0));document.getElementById('topScore').style.display='none';document.getElementById('topTimer').style.display='none'}
 function currentElapsed(){if(!evalRunning)return elapsedBeforePause;return elapsedBeforePause+(performance.now()-startTime)/1000}
 function startEvaluationTimer(){if(evalTimerId)clearInterval(evalTimerId);if(evalFinishGuardId)clearTimeout(evalFinishGuardId);if(duration<=0)return;const tick=()=>{if(!evalRunning||evalPaused)return;const elapsed=currentElapsed();document.getElementById('topTimer').textContent=formatTime(Math.max(0,duration-elapsed));if(elapsed>=duration){if(evalTimerId){clearInterval(evalTimerId);evalTimerId=null}finishEvaluation(true)}};evalTimerId=setInterval(tick,200);evalFinishGuardId=setTimeout(()=>{if(evalRunning&&!evalPaused&&currentElapsed()>=duration)finishEvaluation(true)},Math.max(500,duration*1000+500))}
-async function countdownStart(){if(countdown||evalRunning)return;userName=(document.getElementById('userName').value||'').trim();if(!userName){document.getElementById('userName').focus();setTop('Antes de comenzar, escribe tu nombre.');return}prepareMusicForUserGesture();
+async function countdownStart(){if(countdown||evalRunning)return;userName=(document.getElementById('userName').value||'').trim();if(!userName){document.getElementById('userName').focus();setTop('Antes de comenzar, escribe tu nombre.');return}
+  if((category==='sing'||category==='reading'||category==='acting')&&textSource==='custom'&&!customEvaluationText.trim()){const area=document.getElementById('customText');if(area)area.focus();setTop('Escribe o pega un texto para continuar.');return}
+  prepareMusicForUserGesture();
   const soloVoice=(category==='sing'||category==='reading')&&evaluationMode==='voice';
   if(!soloVoice){await initCamera();if(!cameraReady){setTop('Necesitamos acceso a la cámara para evaluar');return}}
   activation.style.display='none';
@@ -1039,7 +1077,7 @@ async function countdownStart(){if(countdown||evalRunning)return;userName=(docum
   if(!micOk){setTop('No se pudo activar el micrófono. Concede el permiso del navegador para continuar.');return}
   if(!soloVoice){loadPose();setTop('Preparando el detector corporal…');const poseOk=await waitForPoseReady(8000);if(!poseOk){setTop('No se pudo preparar el detector corporal. Revisa tu conexión e inténtalo nuevamente.');return}}
   countdown=true;closePanels();const box=document.getElementById('countdown'),title=document.getElementById('countdownTitle'),text=document.getElementById('countdownText');box.style.display='flex';title.textContent=soloVoice?'Prepárate para usar tu voz.':'Prepárate, ahora evaluaremos tu desempeño.';text.textContent='';await new Promise(r=>setTimeout(r,1800));title.textContent='Evaluando en';for(const n of [3,2,1]){text.textContent=n;await new Promise(r=>setTimeout(r,700))}title.textContent='¡Comenzamos!';text.textContent='';await new Promise(r=>setTimeout(r,450));box.style.display='none';countdown=false;startEvaluation()}
-async function startEvaluation(){const soloVoice=(category==='sing'||category==='reading')&&evaluationMode==='voice';if(!soloVoice&&!poseReady){setTop('El detector corporal todavía no está listo.');return}resetScore();duration=+document.getElementById('duration').value;if(category==='reading')setReadingPassageForDuration(duration>0?duration:30);if(category==='sing'||category==='acting')renderGuideText(category,duration>0?duration:60);if(!soloVoice)startVideoRecording();evalRunning=true;const liveGuide=document.getElementById('liveTextGuidePanel');if(liveGuide&& (category==='sing'||category==='acting'||category==='reading')){liveGuide.classList.add('liveTextGuide');liveGuide.style.display='block'}updateEvaluationModeUI();startGuidePlayback();if(soloVoice){if(voiceSamplingId)clearInterval(voiceSamplingId);voiceSamplingId=setInterval(()=>{if(evalRunning&&!evalPaused)sampleVoice()},100)}if(category==='reading'&&micEnabled)startReadingRecognition();if(selectedMusic.url){startBackgroundMusic();startRecordingMusic()}evalPaused=false;startTime=performance.now();elapsedBeforePause=0;setTop('Evaluando: '+profiles[category].name+(category==='imitation'?' · '+(document.getElementById('imitationType')?.selectedOptions?.[0]?.textContent||'Desafío') :''));document.getElementById('start').textContent='Evaluación en curso';document.getElementById('start').disabled=true;document.getElementById('pause').style.display='block';document.getElementById('finish').style.display='block';document.getElementById('topEvalControls').style.display='flex';document.getElementById('pauseTopBtn').textContent='⏸';document.getElementById('topTimer').style.display='inline';document.getElementById('topTimer').textContent=duration>0?formatTime(duration):'00:00';updateLiveMusicControls();startEvaluationTimer();if(poseReady===false)loadPose()}
+async function startEvaluation(){const soloVoice=(category==='sing'||category==='reading')&&evaluationMode==='voice';if(!soloVoice&&!poseReady){setTop('El detector corporal todavía no está listo.');return}resetScore();duration=+document.getElementById('duration').value;if(category==='reading'&&textSource!=='none')setReadingPassageForDuration(duration>0?duration:30);if((category==='sing'||category==='acting'||category==='reading')&&textSource!=='none')renderGuideText(category,duration>0?duration:60);if(!soloVoice)startVideoRecording();evalRunning=true;const liveGuide=document.getElementById('liveTextGuidePanel');if(liveGuide){liveGuide.classList.add('liveTextGuide');liveGuide.style.display=(category==='sing'||category==='acting'||category==='reading')&&textSource!=='none'?'block':'none'}updateEvaluationModeUI();startGuidePlayback();if(soloVoice){if(voiceSamplingId)clearInterval(voiceSamplingId);voiceSamplingId=setInterval(()=>{if(evalRunning&&!evalPaused)sampleVoice()},100)}if(category==='reading'&&micEnabled)startReadingRecognition();if(selectedMusic.url){startBackgroundMusic();startRecordingMusic()}evalPaused=false;startTime=performance.now();elapsedBeforePause=0;setTop('Evaluando: '+profiles[category].name+(category==='imitation'?' · '+(document.getElementById('imitationType')?.selectedOptions?.[0]?.textContent||'Desafío') :''));document.getElementById('start').textContent='Evaluación en curso';document.getElementById('start').disabled=true;document.getElementById('pause').style.display='block';document.getElementById('finish').style.display='block';document.getElementById('topEvalControls').style.display='flex';document.getElementById('pauseTopBtn').textContent='⏸';document.getElementById('topTimer').style.display='inline';document.getElementById('topTimer').textContent=duration>0?formatTime(duration):'00:00';updateLiveMusicControls();startEvaluationTimer();if(poseReady===false)loadPose()}
 function pauseEvaluation(){if(!evalRunning)return;if(!evalPaused){elapsedBeforePause=currentElapsed();evalPaused=true;if(mediaRecorder&&mediaRecorder.state==='recording'&&mediaRecorder.pause)mediaRecorder.pause();if(selectedMusic.url){musicPlayer.pause();recordMusicPlayer.pause();if(recordMusicGain)recordMusicGain.gain.value=0}setTop('Evaluación pausada')}else{startTime=performance.now();evalPaused=false;if(duration>0){if(evalFinishGuardId)clearTimeout(evalFinishGuardId);evalFinishGuardId=setTimeout(()=>{if(evalRunning&&!evalPaused&&currentElapsed()>=duration)finishEvaluation(true)},Math.max(250,duration*1000-currentElapsed()*1000+500))}if(mediaRecorder&&mediaRecorder.state==='paused'&&mediaRecorder.resume)mediaRecorder.resume();if(selectedMusic.url){startBackgroundMusic();if(recordMusicGain)recordMusicGain.gain.value=volumeLevel;const p=recordMusicPlayer.play();if(p)p.catch(()=>{})}setTop('Evaluando: '+profiles[category].name)}document.getElementById('pause').textContent=evalPaused?'Continuar evaluación':'Pausar evaluación';document.getElementById('pauseTopBtn').textContent=evalPaused?'▶':'⏸';updateLiveMusicControls();}
 async function finishEvaluation(auto=false){
   if(!evalRunning||evalFinishing)return;
@@ -1118,7 +1156,7 @@ document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>platformShare
 document.getElementById('finalClose').onclick=()=>{closeResultPanels();document.getElementById('final').style.display='none';};
 function animateScore(target){const el=document.getElementById('finalScore');const start=performance.now();const dur=1100;function tick(now){const t=Math.min(1,(now-start)/dur);const eased=1-Math.pow(1-t,3);el.textContent=Math.round(target*eased);if(t<1)requestAnimationFrame(tick)}requestAnimationFrame(tick)}
 function celebrate(){const box=document.getElementById('celebration');box.innerHTML='<div class="celebrationBurst">🎉</div>';box.style.display='block';const pieces=['#ff3b81','#00e5ff','#ffd166','#7cff6b','#b36bff','#ff8c42','#ffffff'];for(let i=0;i<72;i++){const c=document.createElement('div');c.className='confetti';const angle=Math.random()*Math.PI*2,distance=18+Math.random()*58;c.style.left='50vw';c.style.top='42vh';c.style.background=pieces[Math.floor(Math.random()*pieces.length)];c.style.width=(6+Math.random()*7)+'px';c.style.height=(9+Math.random()*12)+'px';c.style.setProperty('--dx',Math.cos(angle)*distance+'vw');c.style.setProperty('--dy',Math.sin(angle)*distance+'vh');c.style.animationDuration=(1.8+Math.random()*1.8)+'s';c.style.animationDelay=(Math.random()*.15)+'s';c.style.transform='rotate('+Math.random()*360+'deg)';box.appendChild(c)}setTimeout(()=>{box.style.display='none';box.innerHTML=''},3900)}
-document.querySelectorAll('.skillCard,.secondarySkills button[data-category]').forEach(btn=>btn.onclick=()=>{if(evalRunning)return;category=btn.dataset.category;categoryChosen=true;const sel=document.getElementById('category');if(sel)sel.value=category;evaluationMode='camera';updateDescription();resetScore();const v=document.getElementById('voiceEvaluation');if(v)v.style.display=category==='sing'?'block':'none';const rp=document.getElementById('readingPanel');if(rp)rp.style.display=category==='reading'?'block':'none';updateEvaluationModeUI();openPanel('evaluationPanel');updateGuidePanel();setMicrophoneEnabled(true).catch(e=>console.warn('Micrófono:',e));});document.getElementById('learnAccess').onclick=()=>openPanel('learningPanel');document.getElementById('contactAccess').onclick=()=>openPanel('contactPanel');document.getElementById('collabAccess').onclick=()=>openPanel('collabPanel');document.getElementById('competitionAccess').onclick=()=>openPanel('competitionPanel');
+document.querySelectorAll('.skillCard,.secondarySkills button[data-category]').forEach(btn=>btn.onclick=()=>{if(evalRunning)return;category=btn.dataset.category;categoryChosen=true;const sel=document.getElementById('category');if(sel)sel.value=category;evaluationMode='camera';updateDescription();resetScore();const v=document.getElementById('voiceEvaluation');if(v)v.style.display=category==='sing'?'block':'none';updateTextConfigUI();updateEvaluationModeUI();openPanel('evaluationPanel');hideGuideText();setMicrophoneEnabled(true).catch(e=>console.warn('Micrófono:',e));});document.getElementById('learnAccess').onclick=()=>openPanel('learningPanel');document.getElementById('contactAccess').onclick=()=>openPanel('contactPanel');document.getElementById('collabAccess').onclick=()=>openPanel('collabPanel');document.getElementById('competitionAccess').onclick=()=>openPanel('competitionPanel');
 document.getElementById('mainClose').onclick=closePanels;document.getElementById('evaluationClose').onclick=returnToMain;document.getElementById('learningClose').onclick=returnToMain;document.getElementById('contactClose').onclick=returnToMain;document.getElementById('collabClose').onclick=returnToMain;document.getElementById('competitionClose').onclick=returnToMain;
 document.getElementById('menuBtn').onclick=()=>{if(menuOpen)closePanels();else openPanel('mainMenu')};document.getElementById('liveMusicPause').onclick=toggleLiveMusic;document.getElementById('liveMusicVolume').oninput=e=>{volumeLevel=parseFloat(e.target.value);if(musicGain)musicGain.gain.value=volumeLevel;if(recordMusicGain)recordMusicGain.gain.value=volumeLevel;musicPlayer.volume=volumeLevel;musicAudio.volume=volumeLevel;document.getElementById('volumeSlider').value=volumeLevel};document.getElementById('pauseTopBtn').onclick=()=>{if(evalRunning)pauseEvaluation()};document.getElementById('stopTopBtn').onclick=()=>{if(evalRunning)openStopConfirm()};document.getElementById('cancelStop').onclick=closeStopConfirm;document.getElementById('confirmStop').onclick=abortEvaluation;document.getElementById('volumeSlider').oninput=e=>{volumeLevel=parseFloat(e.target.value);if(audioGain)audioGain.gain.value=volumeLevel;if(musicGain)musicGain.gain.value=volumeLevel;if(recordMusicGain)recordMusicGain.gain.value=volumeLevel;musicPlayer.volume=volumeLevel;musicAudio.volume=volumeLevel;document.getElementById('liveMusicVolume').value=volumeLevel;const vv=document.getElementById('volumeValue');if(vv)vv.textContent=Math.round(volumeLevel*100)+'%'};document.getElementById('orientationClose').onclick=()=>document.getElementById('orientationOverlay').style.display='none';
 const initialVolumeValue=document.getElementById('volumeValue');if(initialVolumeValue)initialVolumeValue.textContent=Math.round(volumeLevel*100)+'%';
