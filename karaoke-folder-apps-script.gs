@@ -1,26 +1,21 @@
 /**
  * Xpresia — Biblioteca Karaoke desde una carpeta de Google Drive
  *
- * Carpeta predeterminada:
+ * Carpeta configurada:
  * 1aU7Zsf3p0VFGoFr2tM09h_ZShni9IkL2
- *
- * Xpresia puede enviar otro folderId. El script intentará leerlo con
- * los permisos de la cuenta que ejecuta la aplicación web.
  *
  * Este script se publica como Aplicación web y Xpresia consulta este endpoint.
  * La aplicación web se ejecuta como el propietario del script, por lo que
  * puede leer la carpeta aunque no sea necesario exponer credenciales en Xpresia.
  */
 
-const DEFAULT_FOLDER_ID = '1aU7Zsf3p0VFGoFr2tM09h_ZShni9IkL2';
+const FOLDER_ID = '1aU7Zsf3p0VFGoFr2tM09h_ZShni9IkL2';
 
 function doGet(e) {
   const callback = e && e.parameter ? String(e.parameter.callback || '').trim() : '';
   try {
-    const requestedFolderId = e && e.parameter ? String(e.parameter.folderId || '').trim() : '';
-    const folderId = requestedFolderId || DEFAULT_FOLDER_ID;
-    const songs = listKaraokeFiles_(folderId);
-    const payload = JSON.stringify({ ok: true, folderId: folderId, songs: songs });
+    const songs = listKaraokeFiles_();
+    const payload = JSON.stringify({ ok: true, folderId: FOLDER_ID, songs: songs });
     return output_(payload, callback);
   } catch (err) {
     const payload = JSON.stringify({ ok: false, error: String(err && err.message || err), songs: [] });
@@ -41,8 +36,8 @@ function output_(json, callback) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function listKaraokeFiles_(folderId) {
-  const folder = DriveApp.getFolderById(folderId);
+function listKaraokeFiles_() {
+  const folder = DriveApp.getFolderById(FOLDER_ID);
   const files = folder.getFiles();
   const songs = [];
 
@@ -82,9 +77,9 @@ function listKaraokeFiles_(folderId) {
  * Ejecuta esta función una vez desde el editor para comprobar permisos y acceso.
  */
 function testFolderAccess() {
-  const folder = DriveApp.getFolderById(DEFAULT_FOLDER_ID);
+  const folder = DriveApp.getFolderById(FOLDER_ID);
   Logger.log('Carpeta: ' + folder.getName());
-  const songs = listKaraokeFiles_(DEFAULT_FOLDER_ID);
+  const songs = listKaraokeFiles_();
   Logger.log('Vídeos encontrados: ' + songs.length);
   songs.forEach(function(song) { Logger.log(song.name + ' → ' + song.id); });
 }
