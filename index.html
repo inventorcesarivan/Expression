@@ -754,12 +754,12 @@ function positionVisualStage(){
     solo.style.height=r.h+'px';
   }
   if(kv){
+    // El karaoke debe ocupar exactamente el mismo rectángulo visual que la cámara/imagen.
+    // Así ambos modos mantienen la misma composición y no invade el menú inferior.
     kv.style.left=(r.x+r.w/2)+'px';
     kv.style.top=r.y+'px';
     kv.style.width=r.w+'px';
-    const desired=innerWidth<700?560:620;
-    const available=Math.max(320,innerHeight-r.y-8);
-    kv.style.height=Math.min(desired,available)+'px';
+    kv.style.height=r.h+'px';
   }
 }
 function updateLiveGuideVisibility(){
